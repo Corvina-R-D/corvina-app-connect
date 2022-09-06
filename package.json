@@ -5,7 +5,8 @@
   "main": "index.ts",
   "scripts": {
     "build": "tsc",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build:systemjs": "tsc --module system",
+    "test": "http-server test/"
   },
   "repository": {
     "type": "git",
@@ -21,6 +22,7 @@
   },
   "homepage": "https://bitbucket.org/exorint/corvina-app-connect#readme",
   "devDependencies": {
+    "http-server": "^14.1.1",
     "typescript": "^4.8.2"
   }
 }

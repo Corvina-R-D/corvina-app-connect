@@ -85,3 +85,12 @@ export class CorvinaConnect {
         return new CorvinaConnect({ jwt: "", organizationId: "", corvinaHost });
     }
 }
+
+declare global {
+    interface Window { $corvina: any; }
+}
+
+window.$corvina = {
+    CorvinaConnect,
+    CorvinaHost,
+};

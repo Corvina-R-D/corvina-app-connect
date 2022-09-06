@@ -7,6 +7,8 @@ export interface IMessage {
 enum MessageType {
     CORVINA_CONNECT_INIT = "corvina-connect-init",
     CORVINA_CONNECT_INIT_RESPONSE = "corvina-connect-init-response",
+    ORGANIZATION_ID_CHANGED = "organization-id-changed",
+    JWT_REFRESHED = "jwt-refreshed",
 }
 
 export class CorvinaHost {

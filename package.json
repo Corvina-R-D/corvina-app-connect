@@ -6,7 +6,10 @@
   "scripts": {
     "build": "tsc",
     "build:systemjs": "tsc --module system",
-    "test": "http-server test/"
+    "build:commonjs": "tsc --module commonjs",
+    "generate:systemjs:sample": "npm run build:systemjs && cp dist/* samples/systemjs/js/",
+    "generate:commonjs:sample": "npm run build:commonjs && browserify dist/index.js > samples/commonjs/js/index.js",
+    "test": "http-server samples/"
   },
   "repository": {
     "type": "git",
@@ -22,6 +25,7 @@
   },
   "homepage": "https://bitbucket.org/exorint/corvina-app-connect#readme",
   "devDependencies": {
+    "browserify": "^17.0.0",
     "http-server": "^14.1.1",
     "typescript": "^4.8.2"
   }

@@ -58,15 +58,15 @@ export class CorvinaConnect {
     }
 
     get jwt(): string {
-        return this.jwt;
+        return this._jwt;
     }
 
     get organizationId(): string {
-        return this.organizationId;
+        return this._organizationId;
     }
 
     get corvinaHost(): string {
-        return this.corvinaHost;
+        return this._corvinaHost;
     }
 
     static async create(corvinaHost: string): Promise<CorvinaConnect> {

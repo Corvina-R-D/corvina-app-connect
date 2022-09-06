@@ -1,0 +1,26 @@
+{
+  "name": "@corvina/corvina-app-connect",
+  "version": "1.0.0",
+  "description": "This library enables an application embedded as an iframe in Corvina to retrieve some information such as JWT, organization id, ...",
+  "main": "index.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@bitbucket.org/exorint/corvina-app-connect.git"
+  },
+  "keywords": [
+    "corvina"
+  ],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://bitbucket.org/exorint/corvina-app-connect/issues"
+  },
+  "homepage": "https://bitbucket.org/exorint/corvina-app-connect#readme",
+  "devDependencies": {
+    "typescript": "^4.8.2"
+  }
+}

@@ -11,17 +11,27 @@ export enum MessageType {
     JWT_CHANGED = "JWT_CHANGED",
 }
 
-export class CorvinaHost {
+export interface IDisposable {
+    dispose(): void;
+}
+
+export class CorvinaHost implements IDisposable {
     private _jwt: string;
     private _organizationId: string;
     private _corvinaHost: string;
+    private _onMessageRef: (event: MessageEvent<IMessage>) => void;
 
     private constructor({ jwt, organizationId, corvinaHost }: { jwt: string, organizationId: string, corvinaHost: string }) {
         this._jwt = jwt;
         this._organizationId = organizationId;
         this._corvinaHost = corvinaHost;
 
-        window.addEventListener("message", this.onMessage.bind(this));
+        this._onMessageRef = this.onMessage.bind(this);
+        window.addEventListener("message", this._onMessageRef);
+    }
+
+    dispose() {
+        window.removeEventListener("message", this._onMessageRef);
     }
 
     set jwt(jwt: string) {
@@ -97,14 +107,15 @@ export class CorvinaHost {
 
 export enum CorvinaConnectEventType {
     ORGANIZATION_ID_CHANGED = "ORGANIZATION_ID_CHANGED",
-    JWT_CHANGED = "ORGANIZATION_ID_CHANGED",
+    JWT_CHANGED = "JWT_CHANGED",
 }
 
-export class CorvinaConnect {
+export class CorvinaConnect implements IDisposable {
     private _jwt: string;
     private _organizationId: string;
     private _corvinaHost: string;
     private _eventCallback: { [key: string]: ((value: any) => void)[] } = {};
+    private _onMessageRef: (event: MessageEvent<IMessage>) => void;
 
     private constructor({ jwt, organizationId, corvinaHost }: { jwt: string, organizationId: string, corvinaHost: string }) {
         this._jwt = jwt;
@@ -117,7 +128,12 @@ export class CorvinaConnect {
         }, {});
 
         // listener on postMessage from Corvina parent window
-        window.addEventListener("message", this.onMessage.bind(this));
+        this._onMessageRef = this.onMessage.bind(this);
+        window.addEventListener("message", this._onMessageRef);
+    }
+
+    dispose() {
+        window.removeEventListener("message", this._onMessageRef);
     }
 
     get jwt(): string {

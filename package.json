@@ -9,7 +9,7 @@
     "build:commonjs": "tsc --module commonjs",
     "generate:systemjs:sample": "npm run build:systemjs && cp dist/* samples/systemjs/js/",
     "generate:commonjs:sample": "npm run build:commonjs && browserify dist/index.js > samples/commonjs/js/index.js",
-    "test": "http-server samples/",
+    "test": "npm run generate:systemjs:sample && generate:commonjs:sample && http-server samples/",
     "test-jsdom": "npx tsc -p tsconfig.json && node ./dist/tests/test.js"
   },
   "repository": {

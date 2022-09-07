@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <title>Mocha Tests</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="https://unpkg.com/mocha/mocha.css" />
+</head>
+
+<body>
+  <div id="mocha"></div>
+
+  <script src='./js/index.js'></script>
+  <script src="https://unpkg.com/chai/chai.js"></script>
+  <script src="https://unpkg.com/mocha/mocha.js"></script>
+
+  <script class="mocha-init">
+    mocha.setup('bdd');
+    mocha.checkLeaks();
+  </script>
+  <script>
+    let { assert } = chai;
+    let { CorvinaHost, CorvinaConnect } = $corvina;
+    function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    it('I can create an instance of CorvinaHost', async function () {
+      let host = await CorvinaHost.create({
+        jwt: 'xxx',
+        corvinaHost: window.location.origin,
+        organizationId: "1",
+      })
+
+      assert.isDefined(host);
+
+      host.dispose();
+    });
+
+    it('I can set jwt and organizationId in CorvinaHost', async function () {
+      let host = await CorvinaHost.create({
+        jwt: 'xxx',
+        corvinaHost: window.location.origin,
+        organizationId: "1",
+      })
+
+      assert.isDefined(host);
+
+      host.jwt = 'new jwt';
+      host.organizationId = 'new organizationId';
+
+      assert.equal(host.jwt, 'new jwt');
+      assert.equal(host.organizationId, 'new organizationId');
+
+      host.dispose();
+    });
+
+    it('If I set jwt in CorvinaHost, then CorvinaConnect will receive that jwt', async function () {
+      let hostConfiguration = {
+        jwt: 'xxx',
+        corvinaHost: window.location.origin,
+        organizationId: "1",
+      };
+      const newJwt = 'new jwt';
+
+      let host = await CorvinaHost.create(hostConfiguration)
+
+      let connect = await CorvinaConnect.create(hostConfiguration.corvinaHost);
+
+      connect.on('JWT_CHANGED', (jwt) => {
+        assert.equal(jwt, newJwt);
+      });
+
+      assert.equal(connect.jwt, hostConfiguration.jwt);
+      assert.equal(connect.corvinaHost, hostConfiguration.corvinaHost);
+      assert.equal(connect.organizationId, hostConfiguration.organizationId);
+
+      host.jwt = newJwt;
+
+      await sleep(10) // I need to wait because there is a postMessage round trip between host and connect
+
+      assert.equal(connect.jwt, newJwt);
+
+      host.dispose();
+      connect.dispose();
+    });
+  </script>
+  <script class="mocha-exec">
+    mocha.run((failures) => {
+      if (failures) {
+        console.error('Tests failed');
+      } else {
+        console.log('Tests passed');
+      }
+    });
+  </script>
+</body>
+
+</html>

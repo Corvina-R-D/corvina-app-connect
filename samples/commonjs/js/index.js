@@ -23,7 +23,11 @@ class CorvinaHost {
         this._jwt = jwt;
         this._organizationId = organizationId;
         this._corvinaHost = corvinaHost;
-        window.addEventListener("message", this.onMessage.bind(this));
+        this._onMessageRef = this.onMessage.bind(this);
+        window.addEventListener("message", this._onMessageRef);
+    }
+    dispose() {
+        window.removeEventListener("message", this._onMessageRef);
     }
     set jwt(jwt) {
         this._jwt = jwt;
@@ -87,7 +91,7 @@ exports.CorvinaHost = CorvinaHost;
 var CorvinaConnectEventType;
 (function (CorvinaConnectEventType) {
     CorvinaConnectEventType["ORGANIZATION_ID_CHANGED"] = "ORGANIZATION_ID_CHANGED";
-    CorvinaConnectEventType["JWT_CHANGED"] = "ORGANIZATION_ID_CHANGED";
+    CorvinaConnectEventType["JWT_CHANGED"] = "JWT_CHANGED";
 })(CorvinaConnectEventType = exports.CorvinaConnectEventType || (exports.CorvinaConnectEventType = {}));
 class CorvinaConnect {
     constructor({ jwt, organizationId, corvinaHost }) {
@@ -99,7 +103,11 @@ class CorvinaConnect {
             acc[key] = [];
             return acc;
         }, {});
-        window.addEventListener("message", this.onMessage.bind(this));
+        this._onMessageRef = this.onMessage.bind(this);
+        window.addEventListener("message", this._onMessageRef);
+    }
+    dispose() {
+        window.removeEventListener("message", this._onMessageRef);
     }
     get jwt() {
         return this._jwt;

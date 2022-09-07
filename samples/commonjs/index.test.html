@@ -63,13 +63,14 @@
         organizationId: "1",
       };
       const newJwt = 'new jwt';
+      let onChangedJwt;
 
       let host = await CorvinaHost.create(hostConfiguration)
 
-      let connect = await CorvinaConnect.create(hostConfiguration.corvinaHost);
+      let connect = await CorvinaConnect.create({ corvinaHost: hostConfiguration.corvinaHost });
 
       connect.on('JWT_CHANGED', (jwt) => {
-        assert.equal(jwt, newJwt);
+        onChangedJwt = jwt;
       });
 
       assert.equal(connect.jwt, hostConfiguration.jwt);
@@ -81,9 +82,63 @@
       await sleep(10) // I need to wait because there is a postMessage round trip between host and connect
 
       assert.equal(connect.jwt, newJwt);
+      assert.equal(onChangedJwt, newJwt);
 
       host.dispose();
-      connect.dispose();
+      CorvinaConnect.dispose();
+    });
+
+    it('If I set organizationId in CorvinaHost, then CorvinaConnect will receive that organizationId', async function () {
+      let hostConfiguration = {
+        jwt: 'aaa',
+        corvinaHost: window.location.origin,
+        organizationId: "-1",
+      };
+      const newOrgId = 'new org id';
+      let onChangedOrgId;
+
+      let host = await CorvinaHost.create(hostConfiguration)
+
+      let connect = await CorvinaConnect.create({ corvinaHost: hostConfiguration.corvinaHost });
+
+      connect.on('ORGANIZATION_ID_CHANGED', (organizationId) => {
+        onChangedOrgId = organizationId;
+      });
+
+      assert.equal(connect.jwt, hostConfiguration.jwt);
+      assert.equal(connect.corvinaHost, hostConfiguration.corvinaHost);
+      assert.equal(connect.organizationId, hostConfiguration.organizationId);
+
+      host.organizationId = newOrgId;
+
+      await sleep(10) // I need to wait because there is a postMessage round trip between host and connect
+
+      assert.equal(connect.organizationId, newOrgId);
+      assert.equal(onChangedOrgId, newOrgId);
+
+      host.dispose();
+      CorvinaConnect.dispose();
+    });
+
+    it('CorvinaConnect is a singleton', async function () {
+      let host = await CorvinaHost.create({
+        jwt: 'xxx',
+        corvinaHost: window.location.origin,
+        organizationId: "1",
+      })
+      let connect1 = await CorvinaConnect.create({
+        corvinaHost: window.location.origin,
+      })
+      let connect2 = await CorvinaConnect.create({
+        corvinaHost: window.location.origin,
+      })
+
+      assert.isDefined(connect1);
+      assert.isDefined(connect2);
+      assert.equal(connect1, connect2);
+
+      connect1.dispose();
+      connect2.dispose();
     });
   </script>
   <script class="mocha-exec">

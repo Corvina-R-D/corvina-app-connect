@@ -106,6 +106,12 @@ class CorvinaConnect {
         this._onMessageRef = this.onMessage.bind(this);
         window.addEventListener("message", this._onMessageRef);
     }
+    static dispose() {
+        if (CorvinaConnect._instance) {
+            CorvinaConnect._instance.dispose();
+            CorvinaConnect._instance = undefined;
+        }
+    }
     dispose() {
         window.removeEventListener("message", this._onMessageRef);
     }
@@ -157,25 +163,29 @@ class CorvinaConnect {
         }
         this._eventCallback[event].push(callback);
     }
-    static create(corvinaHost) {
+    static create({ corvinaHost }) {
         return __awaiter(this, void 0, void 0, function* () {
-            return new Promise((resolve, reject) => {
-                try {
-                    window.postMessage({ type: MessageType.CORVINA_CONNECT_INIT }, corvinaHost);
-                    const handleInitResponse = (event) => {
-                        let message = event.data;
-                        if (message.type === MessageType.CORVINA_CONNECT_INIT_RESPONSE) {
-                            let { jwt, organizationId } = message.payload;
-                            window.removeEventListener("message", handleInitResponse, false);
-                            resolve(new CorvinaConnect({ jwt, organizationId, corvinaHost }));
-                        }
-                    };
-                    window.addEventListener('message', handleInitResponse);
-                }
-                catch (error) {
-                    reject(error);
-                }
-            });
+            if (!this._instance) {
+                return new Promise((resolve, reject) => {
+                    try {
+                        window.postMessage({ type: MessageType.CORVINA_CONNECT_INIT }, corvinaHost);
+                        const handleInitResponse = (event) => {
+                            let message = event.data;
+                            if (message.type === MessageType.CORVINA_CONNECT_INIT_RESPONSE) {
+                                let { jwt, organizationId } = message.payload;
+                                window.removeEventListener("message", handleInitResponse, false);
+                                this._instance = new CorvinaConnect({ jwt, organizationId, corvinaHost });
+                                resolve(this._instance);
+                            }
+                        };
+                        window.addEventListener('message', handleInitResponse);
+                    }
+                    catch (error) {
+                        reject(error);
+                    }
+                });
+            }
+            return this._instance;
         });
     }
 }

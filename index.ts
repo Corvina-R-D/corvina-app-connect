@@ -116,6 +116,7 @@ export class CorvinaConnect implements IDisposable {
     private _corvinaHost: string;
     private _eventCallback: { [key: string]: ((value: any) => void)[] } = {};
     private _onMessageRef: (event: MessageEvent<IMessage>) => void;
+    private static _instance : CorvinaConnect | undefined;
 
     private constructor({ jwt, organizationId, corvinaHost }: { jwt: string, organizationId: string, corvinaHost: string }) {
         this._jwt = jwt;
@@ -130,6 +131,14 @@ export class CorvinaConnect implements IDisposable {
         // listener on postMessage from Corvina parent window
         this._onMessageRef = this.onMessage.bind(this);
         window.addEventListener("message", this._onMessageRef);
+    }
+
+    static dispose() {
+        if (CorvinaConnect._instance) {
+            CorvinaConnect._instance.dispose();
+
+            CorvinaConnect._instance = undefined;
+        }
     }
 
     dispose() {
@@ -198,33 +207,38 @@ export class CorvinaConnect implements IDisposable {
         this._eventCallback[event].push(callback);
     }
 
-    static async create(corvinaHost: string): Promise<CorvinaConnect> {
+    static async create({ corvinaHost } : {corvinaHost: string}): Promise<CorvinaConnect> {
+        if (!this._instance) {
+            return new Promise((resolve, reject) => {
+                try {
+                    // postMessage to Corvina parent window
+                    window.postMessage({ type: MessageType.CORVINA_CONNECT_INIT }, corvinaHost);
+    
+                    // listen for message from Corvina parent window, that message will contain the context information such as JWT, organizationId and corvinaHost
+                    const handleInitResponse = (event: MessageEvent<IMessage>) => {
+                        let message: IMessage = event.data;
+    
+                        if (message.type === MessageType.CORVINA_CONNECT_INIT_RESPONSE) {
+                            let { jwt, organizationId } = message.payload
+    
+                            window.removeEventListener("message", handleInitResponse, false)
+    
+                            this._instance = new CorvinaConnect({ jwt, organizationId, corvinaHost });
 
-        return new Promise((resolve, reject) => {
-            try {
-                // postMessage to Corvina parent window
-                window.postMessage({ type: MessageType.CORVINA_CONNECT_INIT }, corvinaHost);
+                            resolve(this._instance);
+                        }
+                    };
+    
+                    window.addEventListener('message', handleInitResponse);
+    
+                } catch (error) {
+                    reject(error);
+                }
+    
+            });
+        }
 
-                // listen for message from Corvina parent window, that message will contain the context information such as JWT, organizationId and corvinaHost
-                const handleInitResponse = (event: MessageEvent<IMessage>) => {
-                    let message: IMessage = event.data;
-
-                    if (message.type === MessageType.CORVINA_CONNECT_INIT_RESPONSE) {
-                        let { jwt, organizationId } = message.payload
-
-                        window.removeEventListener("message", handleInitResponse, false)
-
-                        resolve(new CorvinaConnect({ jwt, organizationId, corvinaHost }))
-                    }
-                };
-
-                window.addEventListener('message', handleInitResponse);
-
-            } catch (error) {
-                reject(error);
-            }
-
-        });
+        return this._instance;
     }
 }
 

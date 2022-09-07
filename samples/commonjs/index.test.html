@@ -67,7 +67,7 @@
 
       let host = await CorvinaHost.create(hostConfiguration)
 
-      let connect = await CorvinaConnect.create({ corvinaHost: hostConfiguration.corvinaHost });
+      let connect = await CorvinaConnect.create({ corvinaHost: hostConfiguration.corvinaHost, window: window });
 
       connect.on('JWT_CHANGED', (jwt) => {
         onChangedJwt = jwt;
@@ -99,7 +99,7 @@
 
       let host = await CorvinaHost.create(hostConfiguration)
 
-      let connect = await CorvinaConnect.create({ corvinaHost: hostConfiguration.corvinaHost });
+      let connect = await CorvinaConnect.create({ corvinaHost: hostConfiguration.corvinaHost, window: window });
 
       connect.on('ORGANIZATION_ID_CHANGED', (organizationId) => {
         onChangedOrgId = organizationId;
@@ -128,9 +128,11 @@
       })
       let connect1 = await CorvinaConnect.create({
         corvinaHost: window.location.origin,
+        window: window
       })
       let connect2 = await CorvinaConnect.create({
         corvinaHost: window.location.origin,
+        window: window
       })
 
       assert.isDefined(connect1);

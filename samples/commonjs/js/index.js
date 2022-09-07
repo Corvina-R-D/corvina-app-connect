@@ -163,7 +163,7 @@ class CorvinaConnect {
         }
         this._eventCallback[event].push(callback);
     }
-    static create({ corvinaHost }) {
+    static create({ corvinaHost, window }) {
         return __awaiter(this, void 0, void 0, function* () {
             if (!this._instance) {
                 return new Promise((resolve, reject) => {

@@ -44,7 +44,7 @@ export class CorvinaHost implements IDisposable {
             },
         };
 
-        window.postMessage(message, "*");
+        window.postMessage(message, "*"); // TODO: change it in a list of initialized applications
     }
 
     set organizationId(organizationId: string) {
@@ -57,7 +57,7 @@ export class CorvinaHost implements IDisposable {
             },
         };
 
-        window.postMessage(message, "*");
+        window.postMessage(message, "*"); // TODO: change it in a list of initialized applications
     }
 
     get jwt(): string {
@@ -207,7 +207,7 @@ export class CorvinaConnect implements IDisposable {
         this._eventCallback[event].push(callback);
     }
 
-    static async create({ corvinaHost } : {corvinaHost: string}): Promise<CorvinaConnect> {
+    static async create({ corvinaHost, window } : {corvinaHost: string, window: Window}): Promise<CorvinaConnect> {
         if (!this._instance) {
             return new Promise((resolve, reject) => {
                 try {

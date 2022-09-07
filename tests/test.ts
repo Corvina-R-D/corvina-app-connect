@@ -17,4 +17,4 @@ dom.window.postMessage("test", "*");
 global.window = <any>dom.window;
 import { CorvinaConnect, CorvinaHost } from "../index";
 const host = CorvinaHost.create({ jwt: "xxxxx", organizationId: "1", corvinaHost: "http://app.corvina.io" })
-const client = CorvinaConnect.create({ corvinaHost: "http://app.corvina.io" });
+const client = CorvinaConnect.create({ corvinaHost: "http://app.corvina.io", window: global.window });

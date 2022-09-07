@@ -1,10 +1,4 @@
 
-interface CorvinaMessageEvent {
-    data: IMessage;
-    origin: string;
-    source: Window;
-}
-
 export interface IMessage {
     type: string;
     payload: any;
@@ -22,7 +16,7 @@ export class CorvinaHost {
     private _organizationId: string;
     private _corvinaHost: string;
 
-    constructor({ jwt, organizationId, corvinaHost }: { jwt: string, organizationId: string, corvinaHost: string }) {
+    private constructor({ jwt, organizationId, corvinaHost }: { jwt: string, organizationId: string, corvinaHost: string }) {
         this._jwt = jwt;
         this._organizationId = organizationId;
         this._corvinaHost = corvinaHost;
@@ -88,8 +82,11 @@ export class CorvinaHost {
             },
         };
 
-        // TODO: cast added only for typescript, flavio??
-        (<CorvinaMessageEvent>event).source.postMessage(response, event.origin);
+        if (event.source) {
+            event.source.postMessage(response, { targetOrigin: event.origin });
+        } else {
+            console.warn('Event source is not defined', event)
+        }
     }
 
     static async create({ jwt, organizationId, corvinaHost }: { jwt: string, organizationId: string, corvinaHost: string }): Promise<CorvinaHost> {
@@ -107,12 +104,17 @@ export class CorvinaConnect {
     private _jwt: string;
     private _organizationId: string;
     private _corvinaHost: string;
-    private _eventCallback: { [key: string]: ((value: any) => void) } = {};
+    private _eventCallback: { [key: string]: ((value: any) => void)[] } = {};
 
-    constructor({ jwt, organizationId, corvinaHost }: { jwt: string, organizationId: string, corvinaHost: string }) {
+    private constructor({ jwt, organizationId, corvinaHost }: { jwt: string, organizationId: string, corvinaHost: string }) {
         this._jwt = jwt;
         this._organizationId = organizationId;
         this._corvinaHost = corvinaHost;
+        
+        this._eventCallback = Object.keys(CorvinaConnectEventType).reduce((acc: any, key: string) => {
+            acc[key] = [];
+            return acc;
+        }, {});
 
         // listener on postMessage from Corvina parent window
         window.addEventListener("message", this.onMessage.bind(this));
@@ -147,26 +149,37 @@ export class CorvinaConnect {
     private onJwtChanged(event: MessageEvent<IMessage>) {
         this._jwt = event.data.payload.jwt;
 
-        if (this._eventCallback[CorvinaConnectEventType.JWT_CHANGED]) {
-            this._eventCallback[CorvinaConnectEventType.JWT_CHANGED](this._jwt);
+        for (const callback of this._eventCallback[CorvinaConnectEventType.JWT_CHANGED]) {
+            callback(this._jwt);
         }
     }
 
     private onOrganizationIdChanged(event: MessageEvent<IMessage>) {
         this._organizationId = event.data.payload.organizationId;
 
-        if (this._eventCallback[CorvinaConnectEventType.ORGANIZATION_ID_CHANGED]) {
-            this._eventCallback[CorvinaConnectEventType.ORGANIZATION_ID_CHANGED](this._organizationId);
+        for (const callback of this._eventCallback[CorvinaConnectEventType.ORGANIZATION_ID_CHANGED]) {
+            callback(this._organizationId);
         }
+    }
+
+    public off(event: CorvinaConnectEventType) {
+        if (!event) {
+            throw new Error("Event name is required");
+        }
+
+        this._eventCallback[event] = [];
     }
 
     public on(event: CorvinaConnectEventType, callback: (value: any) => void) {
         if (!event) {
             throw new Error("Event name is required");
-
         }
 
-        this._eventCallback[event] = callback;
+        if (!callback) {
+            throw new Error("Callback is required")
+        }
+
+        this._eventCallback[event].push(callback);
     }
 
     static async create(corvinaHost: string): Promise<CorvinaConnect> {

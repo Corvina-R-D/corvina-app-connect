@@ -163,12 +163,12 @@ class CorvinaConnect {
         }
         this._eventCallback[event].push(callback);
     }
-    static create({ corvinaHost, window }) {
+    static create({ corvinaHost, corvinaHostWindow }) {
         return __awaiter(this, void 0, void 0, function* () {
             if (!this._instance) {
                 return new Promise((resolve, reject) => {
                     try {
-                        window.postMessage({ type: MessageType.CORVINA_CONNECT_INIT }, corvinaHost);
+                        corvinaHostWindow.postMessage({ type: MessageType.CORVINA_CONNECT_INIT }, corvinaHost);
                         const handleInitResponse = (event) => {
                             let message = event.data;
                             if (message.type === MessageType.CORVINA_CONNECT_INIT_RESPONSE) {

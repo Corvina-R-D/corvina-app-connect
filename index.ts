@@ -207,12 +207,12 @@ export class CorvinaConnect implements IDisposable {
         this._eventCallback[event].push(callback);
     }
 
-    static async create({ corvinaHost, window } : {corvinaHost: string, window: Window}): Promise<CorvinaConnect> {
+    static async create({ corvinaHost, corvinaHostWindow } : {corvinaHost: string, corvinaHostWindow: Window}): Promise<CorvinaConnect> {
         if (!this._instance) {
             return new Promise((resolve, reject) => {
                 try {
                     // postMessage to Corvina parent window
-                    window.postMessage({ type: MessageType.CORVINA_CONNECT_INIT }, corvinaHost);
+                    corvinaHostWindow.postMessage({ type: MessageType.CORVINA_CONNECT_INIT }, corvinaHost);
     
                     // listen for message from Corvina parent window, that message will contain the context information such as JWT, organizationId and corvinaHost
                     const handleInitResponse = (event: MessageEvent<IMessage>) => {

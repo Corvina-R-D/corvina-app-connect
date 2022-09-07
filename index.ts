@@ -5,10 +5,10 @@ export interface IMessage {
 }
 
 export enum MessageType {
-    CORVINA_CONNECT_INIT = "corvina-connect-init",
-    CORVINA_CONNECT_INIT_RESPONSE = "corvina-connect-init-response",
-    ORGANIZATION_ID_CHANGED = "organization-id-changed",
-    JWT_CHANGED = "jwt-changed",
+    CORVINA_CONNECT_INIT = "CORVINA_CONNECT_INIT",
+    CORVINA_CONNECT_INIT_RESPONSE = "CORVINA_CONNECT_INIT_RESPONSE",
+    ORGANIZATION_ID_CHANGED = "ORGANIZATION_ID_CHANGED",
+    JWT_CHANGED = "JWT_CHANGED",
 }
 
 export class CorvinaHost {
@@ -96,8 +96,8 @@ export class CorvinaHost {
 }
 
 export enum CorvinaConnectEventType {
-    ORGANIZATION_ID_CHANGED = "organization-id-changed",
-    JWT_CHANGED = "jwt-changed",
+    ORGANIZATION_ID_CHANGED = "ORGANIZATION_ID_CHANGED",
+    JWT_CHANGED = "ORGANIZATION_ID_CHANGED",
 }
 
 export class CorvinaConnect {

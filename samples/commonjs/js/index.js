@@ -10,15 +10,46 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.CorvinaConnect = exports.CorvinaHost = void 0;
+exports.CorvinaConnect = exports.CorvinaConnectEventType = exports.CorvinaHost = exports.MessageType = void 0;
 var MessageType;
 (function (MessageType) {
-    MessageType["CORVINA_CONNECT_INIT"] = "corvina-connect-init";
-    MessageType["CORVINA_CONNECT_INIT_RESPONSE"] = "corvina-connect-init-response";
-})(MessageType || (MessageType = {}));
+    MessageType["CORVINA_CONNECT_INIT"] = "CORVINA_CONNECT_INIT";
+    MessageType["CORVINA_CONNECT_INIT_RESPONSE"] = "CORVINA_CONNECT_INIT_RESPONSE";
+    MessageType["ORGANIZATION_ID_CHANGED"] = "ORGANIZATION_ID_CHANGED";
+    MessageType["JWT_CHANGED"] = "JWT_CHANGED";
+})(MessageType = exports.MessageType || (exports.MessageType = {}));
 class CorvinaHost {
-    constructor() {
+    constructor({ jwt, organizationId, corvinaHost }) {
+        this._jwt = jwt;
+        this._organizationId = organizationId;
+        this._corvinaHost = corvinaHost;
         window.addEventListener("message", this.onMessage.bind(this));
+    }
+    set jwt(jwt) {
+        this._jwt = jwt;
+        const message = {
+            type: MessageType.JWT_CHANGED,
+            payload: {
+                jwt,
+            },
+        };
+        window.postMessage(message, "*");
+    }
+    set organizationId(organizationId) {
+        this._organizationId = organizationId;
+        const message = {
+            type: MessageType.ORGANIZATION_ID_CHANGED,
+            payload: {
+                organizationId,
+            },
+        };
+        window.postMessage(message, "*");
+    }
+    get jwt() {
+        return this._jwt;
+    }
+    get organizationId() {
+        return this._organizationId;
     }
     onMessage(event) {
         console.log("onMessage", event.data);
@@ -33,39 +64,110 @@ class CorvinaHost {
     onCorvinaConnectInit(event) {
         const response = {
             type: MessageType.CORVINA_CONNECT_INIT_RESPONSE,
+            payload: {
+                jwt: this._jwt,
+                organizationId: this._organizationId,
+                corvinaHost: this._corvinaHost,
+            },
         };
+        if (event.source) {
+            event.source.postMessage(response, { targetOrigin: event.origin });
+        }
+        else {
+            console.warn('Event source is not defined', event);
+        }
     }
-    static create() {
+    static create({ jwt, organizationId, corvinaHost }) {
         return __awaiter(this, void 0, void 0, function* () {
-            return new CorvinaHost();
+            return new CorvinaHost({ jwt, organizationId, corvinaHost });
         });
     }
 }
 exports.CorvinaHost = CorvinaHost;
+var CorvinaConnectEventType;
+(function (CorvinaConnectEventType) {
+    CorvinaConnectEventType["ORGANIZATION_ID_CHANGED"] = "ORGANIZATION_ID_CHANGED";
+    CorvinaConnectEventType["JWT_CHANGED"] = "ORGANIZATION_ID_CHANGED";
+})(CorvinaConnectEventType = exports.CorvinaConnectEventType || (exports.CorvinaConnectEventType = {}));
 class CorvinaConnect {
     constructor({ jwt, organizationId, corvinaHost }) {
+        this._eventCallback = {};
         this._jwt = jwt;
         this._organizationId = organizationId;
         this._corvinaHost = corvinaHost;
+        this._eventCallback = Object.keys(CorvinaConnectEventType).reduce((acc, key) => {
+            acc[key] = [];
+            return acc;
+        }, {});
+        window.addEventListener("message", this.onMessage.bind(this));
     }
     get jwt() {
-        return this.jwt;
+        return this._jwt;
     }
     get organizationId() {
-        return this.organizationId;
+        return this._organizationId;
     }
     get corvinaHost() {
-        return this.corvinaHost;
+        return this._corvinaHost;
+    }
+    onMessage(event) {
+        switch (event.data.type) {
+            case MessageType.JWT_CHANGED:
+                this.onJwtChanged(event);
+                break;
+            case MessageType.ORGANIZATION_ID_CHANGED:
+                this.onOrganizationIdChanged(event);
+                break;
+            default:
+                break;
+        }
+    }
+    onJwtChanged(event) {
+        this._jwt = event.data.payload.jwt;
+        for (const callback of this._eventCallback[CorvinaConnectEventType.JWT_CHANGED]) {
+            callback(this._jwt);
+        }
+    }
+    onOrganizationIdChanged(event) {
+        this._organizationId = event.data.payload.organizationId;
+        for (const callback of this._eventCallback[CorvinaConnectEventType.ORGANIZATION_ID_CHANGED]) {
+            callback(this._organizationId);
+        }
+    }
+    off(event) {
+        if (!event) {
+            throw new Error("Event name is required");
+        }
+        this._eventCallback[event] = [];
+    }
+    on(event, callback) {
+        if (!event) {
+            throw new Error("Event name is required");
+        }
+        if (!callback) {
+            throw new Error("Callback is required");
+        }
+        this._eventCallback[event].push(callback);
     }
     static create(corvinaHost) {
         return __awaiter(this, void 0, void 0, function* () {
-            window.postMessage({ type: MessageType.CORVINA_CONNECT_INIT }, corvinaHost);
-            window.addEventListener('message', (event) => {
-                let message = event.data;
-                if (message.type === MessageType.CORVINA_CONNECT_INIT_RESPONSE) {
+            return new Promise((resolve, reject) => {
+                try {
+                    window.postMessage({ type: MessageType.CORVINA_CONNECT_INIT }, corvinaHost);
+                    const handleInitResponse = (event) => {
+                        let message = event.data;
+                        if (message.type === MessageType.CORVINA_CONNECT_INIT_RESPONSE) {
+                            let { jwt, organizationId } = message.payload;
+                            window.removeEventListener("message", handleInitResponse, false);
+                            resolve(new CorvinaConnect({ jwt, organizationId, corvinaHost }));
+                        }
+                    };
+                    window.addEventListener('message', handleInitResponse);
+                }
+                catch (error) {
+                    reject(error);
                 }
             });
-            return new CorvinaConnect({ jwt: "", organizationId: "", corvinaHost });
         });
     }
 }

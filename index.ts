@@ -20,6 +20,7 @@ export class CorvinaHost implements IDisposable {
     private _organizationId: string;
     private _corvinaHost: string;
     private _onMessageRef: (event: MessageEvent<IMessage>) => void;
+    private _initializedApps : { [key:string]: MessageEventSource } = {};
 
     private constructor({ jwt, organizationId, corvinaHost }: { jwt: string, organizationId: string, corvinaHost: string }) {
         this._jwt = jwt;
@@ -44,7 +45,7 @@ export class CorvinaHost implements IDisposable {
             },
         };
 
-        window.postMessage(message, "*"); // TODO: change it in a list of initialized applications
+        this.postMessageToAllInitializedApps(message);
     }
 
     set organizationId(organizationId: string) {
@@ -57,7 +58,7 @@ export class CorvinaHost implements IDisposable {
             },
         };
 
-        window.postMessage(message, "*"); // TODO: change it in a list of initialized applications
+        this.postMessageToAllInitializedApps(message);
     }
 
     get jwt(): string {
@@ -66,6 +67,14 @@ export class CorvinaHost implements IDisposable {
 
     get organizationId(): string {
         return this._organizationId;
+    }
+
+    private postMessageToAllInitializedApps(message: IMessage) {
+        for (const app in this._initializedApps) {
+            let source = this._initializedApps[app];
+
+            source.postMessage(message, { targetOrigin: app });
+        }
     }
 
     private onMessage(event: MessageEvent<IMessage>) {
@@ -94,6 +103,8 @@ export class CorvinaHost implements IDisposable {
 
         if (event.source) {
             event.source.postMessage(response, { targetOrigin: event.origin });
+
+            this._initializedApps[event.origin] = event.source;
         } else {
             console.warn('CorvinaHost: Event source is not defined', event)
         }
@@ -218,7 +229,7 @@ export class CorvinaConnect implements IDisposable {
     
                     // listen for message from Corvina parent window, that message will contain the context information such as JWT, organizationId and corvinaHost
                     const handleInitResponse = (event: MessageEvent<IMessage>) => {
-                        
+
                         console.log("CorvinaConnect: onMessage", event.data);
 
                         let message: IMessage = event.data;

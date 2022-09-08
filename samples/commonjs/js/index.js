@@ -20,6 +20,7 @@ var MessageType;
 })(MessageType = exports.MessageType || (exports.MessageType = {}));
 class CorvinaHost {
     constructor({ jwt, organizationId, corvinaHost }) {
+        this._initializedApps = {};
         this._jwt = jwt;
         this._organizationId = organizationId;
         this._corvinaHost = corvinaHost;
@@ -37,7 +38,7 @@ class CorvinaHost {
                 jwt,
             },
         };
-        window.postMessage(message, "*");
+        this.postMessageToAllInitializedApps(message);
     }
     set organizationId(organizationId) {
         this._organizationId = organizationId;
@@ -47,7 +48,7 @@ class CorvinaHost {
                 organizationId,
             },
         };
-        window.postMessage(message, "*");
+        this.postMessageToAllInitializedApps(message);
     }
     get jwt() {
         return this._jwt;
@@ -55,8 +56,14 @@ class CorvinaHost {
     get organizationId() {
         return this._organizationId;
     }
+    postMessageToAllInitializedApps(message) {
+        for (const app in this._initializedApps) {
+            let source = this._initializedApps[app];
+            source.postMessage(message, { targetOrigin: app });
+        }
+    }
     onMessage(event) {
-        console.log("onMessage", event.data);
+        console.log("CorvinaHost: onMessage", event.data);
         switch (event.data.type) {
             case MessageType.CORVINA_CONNECT_INIT:
                 this.onCorvinaConnectInit(event);
@@ -76,9 +83,10 @@ class CorvinaHost {
         };
         if (event.source) {
             event.source.postMessage(response, { targetOrigin: event.origin });
+            this._initializedApps[event.origin] = event.source;
         }
         else {
-            console.warn('Event source is not defined', event);
+            console.warn('CorvinaHost: Event source is not defined', event);
         }
     }
     static create({ jwt, organizationId, corvinaHost }) {
@@ -125,6 +133,7 @@ class CorvinaConnect {
         return this._corvinaHost;
     }
     onMessage(event) {
+        console.log("CorvinaConnect: onMessage", event.data);
         switch (event.data.type) {
             case MessageType.JWT_CHANGED:
                 this.onJwtChanged(event);
@@ -170,6 +179,7 @@ class CorvinaConnect {
                     try {
                         corvinaHostWindow.postMessage({ type: MessageType.CORVINA_CONNECT_INIT }, corvinaHost);
                         const handleInitResponse = (event) => {
+                            console.log("CorvinaConnect: onMessage", event.data);
                             let message = event.data;
                             if (message.type === MessageType.CORVINA_CONNECT_INIT_RESPONSE) {
                                 let { jwt, organizationId } = message.payload;

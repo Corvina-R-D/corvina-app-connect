@@ -16,14 +16,13 @@ export declare class CorvinaHost implements IDisposable {
     private _organizationId;
     private _corvinaHost;
     private _onMessageRef;
-    private _initializedApps;
     private constructor();
     dispose(): void;
     set jwt(jwt: string);
     set organizationId(organizationId: string);
     get jwt(): string;
     get organizationId(): string;
-    private postMessageToAllInitializedApps;
+    private sendMessageToAllFrames;
     private onMessage;
     private onCorvinaConnectInit;
     static create({ jwt, organizationId, corvinaHost }: {

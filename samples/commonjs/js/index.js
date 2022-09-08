@@ -20,7 +20,6 @@ var MessageType;
 })(MessageType = exports.MessageType || (exports.MessageType = {}));
 class CorvinaHost {
     constructor({ jwt, organizationId, corvinaHost }) {
-        this._initializedApps = {};
         this._jwt = jwt;
         this._organizationId = organizationId;
         this._corvinaHost = corvinaHost;
@@ -38,7 +37,7 @@ class CorvinaHost {
                 jwt,
             },
         };
-        this.postMessageToAllInitializedApps(message);
+        this.sendMessageToAllFrames(message);
     }
     set organizationId(organizationId) {
         this._organizationId = organizationId;
@@ -48,7 +47,7 @@ class CorvinaHost {
                 organizationId,
             },
         };
-        this.postMessageToAllInitializedApps(message);
+        this.sendMessageToAllFrames(message);
     }
     get jwt() {
         return this._jwt;
@@ -56,10 +55,11 @@ class CorvinaHost {
     get organizationId() {
         return this._organizationId;
     }
-    postMessageToAllInitializedApps(message) {
-        for (const app in this._initializedApps) {
-            let source = this._initializedApps[app];
-            source.postMessage(message, { targetOrigin: app });
+    sendMessageToAllFrames(message) {
+        var _a;
+        const iframes = document.getElementsByTagName("iframe");
+        for (const iframe of iframes) {
+            (_a = iframe.contentWindow) === null || _a === void 0 ? void 0 : _a.postMessage(message, { targetOrigin: iframe.src });
         }
     }
     onMessage(event) {
@@ -83,7 +83,6 @@ class CorvinaHost {
         };
         if (event.source) {
             event.source.postMessage(response, { targetOrigin: event.origin });
-            this._initializedApps[event.origin] = event.source;
         }
         else {
             console.warn('CorvinaHost: Event source is not defined', event);

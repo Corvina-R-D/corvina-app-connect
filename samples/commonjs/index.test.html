@@ -10,6 +10,7 @@
 
 <body>
   <div id="mocha"></div>
+  <iframe src="" id="app"></iframe>
 
   <script src='./js/index.js'></script>
   <script src="https://unpkg.com/chai/chai.js"></script>
@@ -67,57 +68,48 @@
 
       let host = await CorvinaHost.create(hostConfiguration)
 
-      let connect = await CorvinaConnect.create({ corvinaHost: hostConfiguration.corvinaHost, corvinaHostWindow: window });
+      const appUrl = `${window.location.origin}/commonjs/iframe.html?corvinaHost=${encodeURIComponent(hostConfiguration.corvinaHost)}`;
 
-      connect.on('JWT_CHANGED', (jwt) => {
-        onChangedJwt = jwt;
-      });
+      document.querySelector("#app").src = appUrl;
 
-      assert.equal(connect.jwt, hostConfiguration.jwt);
-      assert.equal(connect.corvinaHost, hostConfiguration.corvinaHost);
-      assert.equal(connect.organizationId, hostConfiguration.organizationId);
+      await sleep(50) // time to load the iframe      
 
       host.jwt = newJwt;
 
       await sleep(10) // I need to wait because there is a postMessage round trip between host and connect
 
+      let connect = document.getElementById("app").contentWindow.connect
       assert.equal(connect.jwt, newJwt);
-      assert.equal(onChangedJwt, newJwt);
 
       host.dispose();
-      CorvinaConnect.dispose();
+      document.querySelector("#app").src = "";
     });
 
     it('If I set organizationId in CorvinaHost, then CorvinaConnect will receive that organizationId', async function () {
       let hostConfiguration = {
-        jwt: 'aaa',
+        jwt: 'xxx',
         corvinaHost: window.location.origin,
-        organizationId: "-1",
+        organizationId: "1",
       };
       const newOrgId = 'new org id';
-      let onChangedOrgId;
 
       let host = await CorvinaHost.create(hostConfiguration)
 
-      let connect = await CorvinaConnect.create({ corvinaHost: hostConfiguration.corvinaHost, corvinaHostWindow: window });
+      const appUrl = `${window.location.origin}/commonjs/iframe.html?corvinaHost=${encodeURIComponent(hostConfiguration.corvinaHost)}`;
 
-      connect.on('ORGANIZATION_ID_CHANGED', (organizationId) => {
-        onChangedOrgId = organizationId;
-      });
+      document.querySelector("#app").src = appUrl;
 
-      assert.equal(connect.jwt, hostConfiguration.jwt);
-      assert.equal(connect.corvinaHost, hostConfiguration.corvinaHost);
-      assert.equal(connect.organizationId, hostConfiguration.organizationId);
+      await sleep(50) // time to load the iframe      
 
       host.organizationId = newOrgId;
 
       await sleep(10) // I need to wait because there is a postMessage round trip between host and connect
 
+      let connect = document.getElementById("app").contentWindow.connect
       assert.equal(connect.organizationId, newOrgId);
-      assert.equal(onChangedOrgId, newOrgId);
 
       host.dispose();
-      CorvinaConnect.dispose();
+      document.querySelector("#app").src = "";
     });
 
     it('CorvinaConnect is a singleton', async function () {

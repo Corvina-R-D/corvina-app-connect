@@ -55,7 +55,7 @@ export declare class CorvinaConnect implements IDisposable {
     on(event: CorvinaConnectEventType, callback: (value: any) => void): void;
     static create({ corvinaHost, corvinaHostWindow }: {
         corvinaHost: string;
-        corvinaHostWindow: Window;
+        corvinaHostWindow?: Window;
     }): Promise<CorvinaConnect>;
 }
 declare global {

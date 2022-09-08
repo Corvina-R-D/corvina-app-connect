@@ -1,4 +1,3 @@
-
 export interface IMessage {
     type: string;
     payload: any;
@@ -70,6 +69,7 @@ export class CorvinaHost implements IDisposable {
     }
 
     private postMessageToAllInitializedApps(message: IMessage) {
+        // TODO: replace it with window.frames
         for (const app in this._initializedApps) {
             let source = this._initializedApps[app];
 

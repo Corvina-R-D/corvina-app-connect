@@ -70,7 +70,7 @@ export class CorvinaHost implements IDisposable {
 
     private onMessage(event: MessageEvent<IMessage>) {
 
-        console.log("onMessage", event.data);
+        console.log("CorvinaHost: onMessage", event.data);
 
         switch (event.data.type) {
             case MessageType.CORVINA_CONNECT_INIT:
@@ -95,7 +95,7 @@ export class CorvinaHost implements IDisposable {
         if (event.source) {
             event.source.postMessage(response, { targetOrigin: event.origin });
         } else {
-            console.warn('Event source is not defined', event)
+            console.warn('CorvinaHost: Event source is not defined', event)
         }
     }
 
@@ -159,6 +159,8 @@ export class CorvinaConnect implements IDisposable {
 
     private onMessage(event: MessageEvent<IMessage>) {
 
+        console.log("CorvinaConnect: onMessage", event.data);
+
         switch (event.data.type) {
             case MessageType.JWT_CHANGED:
                 this.onJwtChanged(event);
@@ -216,6 +218,9 @@ export class CorvinaConnect implements IDisposable {
     
                     // listen for message from Corvina parent window, that message will contain the context information such as JWT, organizationId and corvinaHost
                     const handleInitResponse = (event: MessageEvent<IMessage>) => {
+                        
+                        console.log("CorvinaConnect: onMessage", event.data);
+
                         let message: IMessage = event.data;
     
                         if (message.type === MessageType.CORVINA_CONNECT_INIT_RESPONSE) {

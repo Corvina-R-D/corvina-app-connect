@@ -1,6 +1,6 @@
 {
   "name": "@corvina/corvina-app-connect",
-  "version": "0.0.12",
+  "version": "0.0.13",
   "description": "This library enables an application embedded as an iframe in Corvina to retrieve some information such as JWT, organization id, ...",
   "main": "src/index.ts",
   "scripts": {
@@ -9,7 +9,7 @@
     "build:ems": "tsc --module ES2015 --outDir lib/es2015",
     "generate:systemjs:sample": "npm run build:systemjs && cp lib/systemjs/* samples/systemjs/js/",
     "generate:commonjs:sample": "npm run build:commonjs && browserify lib/commonjs/index.js > samples/commonjs/js/index.js",
-    "test": "npm run generate:systemjs:sample && generate:commonjs:sample && http-server samples/",
+    "test": "npm run generate:commonjs:sample && http-server samples/",
     "deploy": "npm publish --access public"
   },
   "repository": {

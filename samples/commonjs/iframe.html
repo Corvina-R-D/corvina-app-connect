@@ -13,12 +13,16 @@
 
     <script>
         (async () => {
-            
-            let corvinaHost = window.location.search.split('corvinaHost=')[1];
 
-            let connect = await $corvina.CorvinaConnect.create({ corvinaHost: decodeURIComponent(corvinaHost), corvinaHostWindow: window.parent });
+            try {
+                let corvinaHost = window.location.search.split('corvinaHost=')[1];
 
-            window.connect = connect
+                let connect = await $corvina.CorvinaConnect.create({ corvinaHost: decodeURIComponent(corvinaHost), corvinaHostWindow: window.parent });
+
+                window.connect = connect
+            } catch (error) {
+                console.error(error);
+            }
         })()
     </script>
 </body>

@@ -76,7 +76,7 @@
 
       host.jwt = newJwt;
 
-      await sleep(10) // I need to wait because there is a postMessage round trip between host and connect
+      await sleep(50) // I need to wait because there is a postMessage round trip between host and connect
 
       let connect = document.getElementById("app").contentWindow.connect
       assert.equal(connect.jwt, newJwt);
@@ -103,7 +103,7 @@
 
       host.organizationId = newOrgId;
 
-      await sleep(10) // I need to wait because there is a postMessage round trip between host and connect
+      await sleep(50) // I need to wait because there is a postMessage round trip between host and connect
 
       let connect = document.getElementById("app").contentWindow.connect
       assert.equal(connect.organizationId, newOrgId);

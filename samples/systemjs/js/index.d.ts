@@ -42,7 +42,11 @@ export declare class CorvinaConnect implements IDisposable {
     private _eventCallback;
     private _onMessageRef;
     private static _instance;
-    private constructor();
+    constructor({ jwt, organizationId, corvinaHost }: {
+        jwt: string;
+        organizationId: string;
+        corvinaHost: string;
+    });
     static dispose(): void;
     dispose(): void;
     get jwt(): string;
@@ -53,9 +57,10 @@ export declare class CorvinaConnect implements IDisposable {
     private onOrganizationIdChanged;
     off(event: CorvinaConnectEventType): void;
     on(event: CorvinaConnectEventType, callback: (value: any) => void): void;
-    static create({ corvinaHost, corvinaHostWindow }: {
+    static create({ corvinaHost, corvinaHostWindow, timeoutMs }: {
         corvinaHost: string;
         corvinaHostWindow?: Window;
+        timeoutMs?: number;
     }): Promise<CorvinaConnect>;
 }
 declare global {

@@ -119,6 +119,37 @@ export enum CorvinaConnectEventType {
     JWT_CHANGED = "JWT_CHANGED",
 }
 
+const initHandshake = ({ corvinaHostWindow, corvinaHost }: { corvinaHostWindow: Window, corvinaHost: string }): Promise<CorvinaConnect> => {
+    return new Promise((resolve, reject) => {
+        try {
+            // postMessage to Corvina parent window
+            corvinaHostWindow?.postMessage({ type: MessageType.CORVINA_CONNECT_INIT }, corvinaHost);
+
+            // listen for message from Corvina parent window, that message will contain the context information such as JWT, organizationId and corvinaHost
+            const handleInitResponse = (event: MessageEvent<IMessage>) => {
+
+                console.log("CorvinaConnect: onMessage", event.data);
+
+                let message: IMessage = event.data;
+
+                if (message.type === MessageType.CORVINA_CONNECT_INIT_RESPONSE) {
+                    let { jwt, organizationId } = message.payload
+
+                    window.removeEventListener("message", handleInitResponse, false)
+
+                    resolve(new CorvinaConnect({ jwt, organizationId, corvinaHost }));
+                }
+            };
+
+            window.addEventListener('message', handleInitResponse);
+
+        } catch (error) {
+            reject(error);
+        }
+
+    })
+}
+
 export class CorvinaConnect implements IDisposable {
     private _jwt: string;
     private _organizationId: string;
@@ -127,7 +158,20 @@ export class CorvinaConnect implements IDisposable {
     private _onMessageRef: (event: MessageEvent<IMessage>) => void;
     private static _instance: CorvinaConnect | undefined;
 
-    private constructor({ jwt, organizationId, corvinaHost }: { jwt: string, organizationId: string, corvinaHost: string }) {
+    public constructor({ jwt, organizationId, corvinaHost }: { jwt: string, organizationId: string, corvinaHost: string }) {
+
+        if (!jwt) {
+            throw new Error('JWT is required');
+        }
+
+        if (!organizationId) {
+            throw new Error('OrganizationId is required');
+        }
+
+        if (!corvinaHost) {
+            throw new Error('CorvinaHost is required');
+        }
+
         this._jwt = jwt;
         this._organizationId = organizationId;
         this._corvinaHost = corvinaHost;
@@ -218,41 +262,17 @@ export class CorvinaConnect implements IDisposable {
         this._eventCallback[event].push(callback);
     }
 
-    static async create({ corvinaHost, corvinaHostWindow }: { corvinaHost: string, corvinaHostWindow?: Window }): Promise<CorvinaConnect> {
+    static async create({ corvinaHost, corvinaHostWindow, timeoutMs }: { corvinaHost: string, corvinaHostWindow?: Window, timeoutMs?: number }): Promise<CorvinaConnect> {
 
         if (!this._instance) {
             corvinaHostWindow = corvinaHostWindow || window.parent.window;
 
-            return new Promise((resolve, reject) => {
-                try {
-                    // postMessage to Corvina parent window
-                    corvinaHostWindow?.postMessage({ type: MessageType.CORVINA_CONNECT_INIT }, corvinaHost);
-
-                    // listen for message from Corvina parent window, that message will contain the context information such as JWT, organizationId and corvinaHost
-                    const handleInitResponse = (event: MessageEvent<IMessage>) => {
-
-                        console.log("CorvinaConnect: onMessage", event.data);
-
-                        let message: IMessage = event.data;
-
-                        if (message.type === MessageType.CORVINA_CONNECT_INIT_RESPONSE) {
-                            let { jwt, organizationId } = message.payload
-
-                            window.removeEventListener("message", handleInitResponse, false)
-
-                            this._instance = new CorvinaConnect({ jwt, organizationId, corvinaHost });
-
-                            resolve(this._instance);
-                        }
-                    };
-
-                    window.addEventListener('message', handleInitResponse);
-
-                } catch (error) {
-                    reject(error);
-                }
-
+            const initHandshakePromise = initHandshake({ corvinaHostWindow, corvinaHost });
+            const timeoutPromise = new Promise((resolve, reject) => {
+                setTimeout(reject, timeoutMs ?? 5000, 'Create timeout reached');
             });
+
+            this._instance = (await Promise.race([initHandshakePromise, timeoutPromise]) as CorvinaConnect)
         }
 
         return this._instance;

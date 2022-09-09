@@ -1,6 +1,6 @@
 import logo from './logo.svg';
 import './App.css';
-import { CorvinaConnect, CorvinaHost } from '@corvina/corvina-app-connect/lib/es2015';
+import { CorvinaConnect, CorvinaHost } from '@corvina/corvina-app-connect';
 
 (async () => {
   let hostConfiguration = {

@@ -12,7 +12,7 @@
   <div id="mocha"></div>
   <iframe src="" id="app"></iframe>
 
-  <script src='./js/index.js'></script>
+  <script src='https://unpkg.com/@corvina/corvina-app-connect@0.0.14/dist/index.umd.min.js'></script>
   <script src="https://unpkg.com/chai/chai.js"></script>
   <script src="https://unpkg.com/mocha/mocha.js"></script>
 
@@ -58,6 +58,8 @@
     });
 
     it('If I set jwt in CorvinaHost, then CorvinaConnect will receive that jwt', async function () {
+      this.slow(400);
+
       let hostConfiguration = {
         jwt: 'xxx',
         corvinaHost: window.location.origin,
@@ -71,8 +73,8 @@
       const appUrl = `${window.location.origin}/commonjs/iframe.html?corvinaHost=${encodeURIComponent(hostConfiguration.corvinaHost)}`;
 
       document.querySelector("#app").src = appUrl;
-
-      await sleep(50) // time to load the iframe      
+      
+      await sleep(200) // time to load the iframe      
 
       host.jwt = newJwt;
 
@@ -86,6 +88,8 @@
     });
 
     it('If I set organizationId in CorvinaHost, then CorvinaConnect will receive that organizationId', async function () {
+      this.slow(400);
+
       let hostConfiguration = {
         jwt: 'xxx',
         corvinaHost: window.location.origin,
@@ -99,7 +103,7 @@
 
       document.querySelector("#app").src = appUrl;
 
-      await sleep(50) // time to load the iframe      
+      await sleep(200) // time to load the iframe      
 
       host.organizationId = newOrgId;
 

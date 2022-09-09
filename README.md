@@ -1,29 +1,50 @@
 # README #
 
-This README would normally document whatever steps are necessary to get your application up and running.
-
 ### What is this repository for? ###
 
-* Quick summary
-* Version
-* [Learn Markdown](https://bitbucket.org/tutorials/markdowndemo)
+This library enables an application embedded as an iframe in Corvina to retrieve some information such as JWT, organization id, ...
 
-### How do I get set up? ###
+### How to use this library? ###
 
-* Summary of set up
-* Configuration
-* Dependencies
-* Database configuration
-* How to run tests
-* Deployment instructions
+* Using npm: 
+```shell
+npm install @corvina/corvina-app-connect
+```
+then in your code:
+```javascript
+ import { CorvinaAppConnect } from '@corvina/corvina-app-connect';
+```
+* Using script tag:
+```html
+<script src="https://unpkg.com/@corvina/corvina-app-connect"></script>
+```
+or using a specific version 
+```html
+<script src="https://unpkg.com/@corvina/corvina-app-connect@0.0.16/dist/index.umd.min.js"></script>
+```
+then in your code:
+```javascript
+let { CorvinaHost, CorvinaConnect } = $corvina;
+```
 
-### Contribution guidelines ###
+* Using script tag of type module
+```html
+<script type="module">
+    import { CorvinaHost, CorvinaConnect } from 'https://unpkg.com/@corvina/corvina-app-connect@0.0.16/dist/index.min.mjs';
+</script>
+```
 
-* Writing tests
-* Code review
-* Other guidelines
+Then you can create an instance of CorvinaConnect and use it to retrieve the information you need:
+```javascript
+let connect = await CorvinaConnect.create({ corvinaHost: "https://corvina.io", corvinaHostWindow: window.parent });
+let jwt = connect.jwt;
+let organizationId = connect.organizationId;
 
-### Who do I talk to? ###
+connect.on(CorvinaConnectEventType.ORGANIZATION_ID_CHANGED, (organizationId: string) => {
+    console.log(`Organization ID changed to ${organizationId}`)
+});
 
-* Repo owner or admin
-* Other community or team contact
+connect.on(CorvinaConnectEventType.JWT_CHANGED, (jwt: string) => {
+    console.log(`JWT changed to ${jwt}`)
+});
+```

@@ -12,7 +12,7 @@
   <div id="mocha"></div>
   <iframe src="" id="app"></iframe>
 
-  <script src='https://unpkg.com/@corvina/corvina-app-connect@0.0.14/dist/index.umd.min.js'></script>
+  <!-- <script src='https://unpkg.com/@corvina/corvina-app-connect@0.0.16/dist/index.umd.min.js'></script> -->
   <script src="https://unpkg.com/chai/chai.js"></script>
   <script src="https://unpkg.com/mocha/mocha.js"></script>
 
@@ -20,9 +20,10 @@
     mocha.setup('bdd');
     mocha.checkLeaks();
   </script>
-  <script>
+  <script type="module">
+    import { CorvinaHost, CorvinaConnect } from 'https://unpkg.com/@corvina/corvina-app-connect@0.0.16/dist/index.min.mjs';
     let { assert } = chai;
-    let { CorvinaHost, CorvinaConnect } = $corvina;
+    // let { CorvinaHost, CorvinaConnect } = $corvina;
     function sleep(ms) {
       return new Promise(resolve => setTimeout(resolve, ms));
     }
@@ -138,8 +139,7 @@
       connect1.dispose();
       connect2.dispose();
     });
-  </script>
-  <script class="mocha-exec">
+
     mocha.run((failures) => {
       if (failures) {
         console.error('Tests failed');
@@ -148,6 +148,7 @@
       }
     });
   </script>
+  
 </body>
 
 </html>

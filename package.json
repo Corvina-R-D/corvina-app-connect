@@ -1,6 +1,6 @@
 {
   "name": "@corvina/corvina-app-connect",
-  "version": "0.0.14",
+  "version": "1.0.0",
   "description": "This library enables an application embedded as an iframe in Corvina to retrieve some information such as JWT, organization id, ...",
   "main": "dist/index.js",
   "module": "dist/index.min.mjs",
@@ -15,7 +15,7 @@
     "build:stats": "(echo '\\033[35;3m' ; cd dist && ls -lh index*js index*gz | tail -n +2 | awk '{print $5,$9}')",
     "bundle:esm": "rollup dist/index.js --file dist/index.mjs --format esm",
     "bundle:esm:min": "terser --ecma 6 --compress --mangle --module -o dist/index.min.mjs -- dist/index.mjs && gzip -9 -c dist/index.min.mjs > dist/index.min.mjs.gz",
-    "bundle:umd": "rollup dist/index.js --file dist/index.umd.js --format umd --name sayHello",
+    "bundle:umd": "rollup dist/index.js --file dist/index.umd.js --format umd --name '$corvina'",
     "bundle:umd:min": "terser --ecma 6 --compress --mangle -o dist/index.umd.min.js -- dist/index.umd.js && gzip -9 -c dist/index.umd.min.js > dist/index.umd.min.js.gz",
     "test": "npm run generate:commonjs:sample && http-server samples/",
     "deploy": "npm publish --access public"

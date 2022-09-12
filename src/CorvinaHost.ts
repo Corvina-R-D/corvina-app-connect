@@ -1,15 +1,18 @@
 import { IDisposable, IMessage, MessageType } from './common'
+import { ITheme } from './ITheme';
 
 export class CorvinaHost implements IDisposable {
     private _jwt: string;
     private _organizationId: string;
     private _corvinaHost: string;
+    private _theme: ITheme | undefined;
     private _onMessageRef: (event: MessageEvent<IMessage>) => void;
 
-    private constructor({ jwt, organizationId, corvinaHost }: { jwt: string, organizationId: string, corvinaHost: string }) {
+    private constructor({ jwt, organizationId, corvinaHost, theme }: { jwt: string, organizationId: string, corvinaHost: string, theme?: ITheme }) {
         this._jwt = jwt;
         this._organizationId = organizationId;
         this._corvinaHost = corvinaHost;
+        this._theme = theme;
 
         this._onMessageRef = this.onMessage.bind(this);
         window.addEventListener("message", this._onMessageRef);
@@ -45,12 +48,29 @@ export class CorvinaHost implements IDisposable {
         this.sendMessageToAllFrames(message);
     }
 
+    set theme(theme: ITheme | undefined) {
+        this._theme = theme;
+
+        const message: IMessage = {
+            type: MessageType.THEME_CHANGED,
+            payload: {
+                theme,
+            },
+        };
+
+        this.sendMessageToAllFrames(message);
+    }
+
     get jwt(): string {
         return this._jwt;
     }
 
     get organizationId(): string {
         return this._organizationId;
+    }
+
+    get theme(): ITheme | undefined {
+        return this._theme;
     }
 
     private sendMessageToAllFrames(message: IMessage) {
@@ -84,6 +104,7 @@ export class CorvinaHost implements IDisposable {
                 jwt: this._jwt,
                 organizationId: this._organizationId,
                 corvinaHost: this._corvinaHost,
+                theme: this._theme,
             },
         };
 
@@ -94,8 +115,8 @@ export class CorvinaHost implements IDisposable {
         }
     }
 
-    static async create({ jwt, organizationId, corvinaHost }: { jwt: string, organizationId: string, corvinaHost: string }): Promise<CorvinaHost> {
+    static async create({ jwt, organizationId, corvinaHost, theme }: { jwt: string, organizationId: string, corvinaHost: string, theme?: ITheme }): Promise<CorvinaHost> {
 
-        return new CorvinaHost({ jwt, organizationId, corvinaHost });
+        return new CorvinaHost({ jwt, organizationId, corvinaHost, theme });
     }
 }

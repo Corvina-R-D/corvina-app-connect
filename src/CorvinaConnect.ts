@@ -1,9 +1,11 @@
 import { IDisposable, IMessage, MessageType } from "./common";
+import { ITheme } from "./ITheme";
 
 
 export enum CorvinaConnectEventType {
     ORGANIZATION_ID_CHANGED = "ORGANIZATION_ID_CHANGED",
     JWT_CHANGED = "JWT_CHANGED",
+    THEME_CHANGED = "THEME_CHANGED",
 }
 
 const initHandshake = ({ corvinaHostWindow, corvinaHost }: { corvinaHostWindow: Window, corvinaHost: string }): Promise<CorvinaConnect> => {
@@ -20,11 +22,11 @@ const initHandshake = ({ corvinaHostWindow, corvinaHost }: { corvinaHostWindow: 
                 let message: IMessage = event.data;
 
                 if (message.type === MessageType.CORVINA_CONNECT_INIT_RESPONSE) {
-                    let { jwt, organizationId } = message.payload
+                    let { jwt, organizationId, theme } = message.payload
 
                     window.removeEventListener("message", handleInitResponse, false)
 
-                    resolve(new CorvinaConnect({ jwt, organizationId, corvinaHost }));
+                    resolve(new CorvinaConnect({ jwt, organizationId, corvinaHost, theme }));
                 }
             };
 
@@ -41,11 +43,12 @@ export class CorvinaConnect implements IDisposable {
     private _jwt: string;
     private _organizationId: string;
     private _corvinaHost: string;
+    private _theme: ITheme | undefined;
     private _eventCallback: { [key: string]: ((value: any) => void)[] } = {};
     private _onMessageRef: (event: MessageEvent<IMessage>) => void;
     private static _instance: CorvinaConnect | undefined;
 
-    public constructor({ jwt, organizationId, corvinaHost }: { jwt: string, organizationId: string, corvinaHost: string }) {
+    public constructor({ jwt, organizationId, corvinaHost, theme }: { jwt: string, organizationId: string, corvinaHost: string, theme?: ITheme }) {
 
         if (!jwt) {
             throw new Error('JWT is required');
@@ -62,6 +65,7 @@ export class CorvinaConnect implements IDisposable {
         this._jwt = jwt;
         this._organizationId = organizationId;
         this._corvinaHost = corvinaHost;
+        this._theme = theme;
 
         this._eventCallback = Object.keys(CorvinaConnectEventType).reduce((acc: any, key: string) => {
             acc[key] = [];
@@ -97,6 +101,10 @@ export class CorvinaConnect implements IDisposable {
         return this._corvinaHost;
     }
 
+    get theme(): ITheme | undefined {
+        return this._theme;
+    }
+
     private onMessage(event: MessageEvent<IMessage>) {
 
         console.log("CorvinaConnect: onMessage", event.data);
@@ -108,8 +116,18 @@ export class CorvinaConnect implements IDisposable {
             case MessageType.ORGANIZATION_ID_CHANGED:
                 this.onOrganizationIdChanged(event);
                 break;
+            case MessageType.THEME_CHANGED:
+                this.onThemeChanged(event);
             default:
                 break;
+        }
+    }
+
+    private onThemeChanged(event: MessageEvent<IMessage>) {
+        this._theme = event.data.payload.theme;
+
+        for (const callback of this._eventCallback[CorvinaConnectEventType.THEME_CHANGED]) {
+            callback(this._theme);
         }
     }
 

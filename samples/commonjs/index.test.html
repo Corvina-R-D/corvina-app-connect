@@ -21,7 +21,7 @@
     mocha.checkLeaks();
   </script>
   <script type="module">
-    import { CorvinaHost, CorvinaConnect } from 'https://unpkg.com/@corvina/corvina-app-connect@1.0.0/dist/index.min.mjs';
+    import { CorvinaHost, CorvinaConnect } from 'https://unpkg.com/@corvina/corvina-app-connect@1.1.0-beta.2/dist/index.min.mjs';
     let { assert } = chai;
     // let { CorvinaHost, CorvinaConnect } = $corvina;
     function sleep(ms) {
@@ -74,7 +74,7 @@
       const appUrl = `${window.location.origin}/commonjs/iframe.html?corvinaHost=${encodeURIComponent(hostConfiguration.corvinaHost)}`;
 
       document.querySelector("#app").src = appUrl;
-      
+
       await sleep(200) // time to load the iframe      
 
       host.jwt = newJwt;
@@ -117,6 +117,62 @@
       document.querySelector("#app").src = "";
     });
 
+    it('If I set theme in CorvinaHost, then CorvinaConnect will receive that theme', async function () {
+      this.slow(400);
+
+      let hostConfiguration = {
+        jwt: 'xxx',
+        corvinaHost: window.location.origin,
+        organizationId: "1",
+        theme: {
+          colors: {
+            wt: 'red',
+            g1: 'blue',
+            g2: 'green',
+            g3: 'yellow',
+            g4: 'pink',
+            dk: 'black',
+            primary: 'purple',
+            primaryDk1: 'purple',
+            primaryDk2: 'purple',
+            highlight: 'purple',
+            alert: 'purple',
+            warningSerious: 'purple',
+            warningMild: 'purple',
+            good: 'green',
+          },
+        }
+      };
+
+      let host = await CorvinaHost.create(hostConfiguration)
+
+      let iframe = document.querySelector("#app");
+      let waitIframeLoad = () => new Promise((resolve, reject) => {
+        iframe.onload = resolve;
+        iframe.onerror = reject;
+
+        const appUrl = `${window.location.origin}/commonjs/iframe.html?corvinaHost=${encodeURIComponent(hostConfiguration.corvinaHost)}`;
+
+        iframe.src = appUrl;
+      });
+
+      await waitIframeLoad();
+
+      let connect = document.getElementById("app").contentWindow.connect
+
+      assert.equal(JSON.stringify(connect.theme), JSON.stringify(hostConfiguration.theme));
+
+      const newTheme = { colors: { ...hostConfiguration.theme.colors, primary: 'blue' } };
+      host.theme = newTheme;
+
+      await sleep(50) // I need to wait because there is a postMessage round trip between host and connect
+
+      assert.equal(JSON.stringify(connect.theme), JSON.stringify(newTheme));
+
+      host.dispose();
+      document.querySelector("#app").src = "";
+    });
+
     it('CorvinaConnect is a singleton', async function () {
       let host = await CorvinaHost.create({
         jwt: 'xxx',
@@ -148,7 +204,7 @@
       }
     });
   </script>
-  
+
 </body>
 
 </html>

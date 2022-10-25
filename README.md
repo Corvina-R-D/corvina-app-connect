@@ -3,6 +3,7 @@
 ### What is this repository for? ###
 
 This library enables an application embedded as an iframe in Corvina to retrieve some information such as JWT, organization id, ...
+The iframe id must have a prefix "corvina-app-connect-" and the application must be registered in the Corvina platform.
 
 ### How to use this library? ###
 

@@ -79,7 +79,9 @@ export class CorvinaHost implements IDisposable {
 
         // send a message to each iframe
         for (const iframe of iframes) {
-            iframe.contentWindow?.postMessage(message, { targetOrigin: iframe.src });
+            if (iframe.id && iframe.id.startsWith("corvina-app-connect-")) {
+                iframe.contentWindow?.postMessage(message, { targetOrigin: iframe.src });
+            }
         }
     }
 

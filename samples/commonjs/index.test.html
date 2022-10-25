@@ -10,7 +10,7 @@
 
 <body>
   <div id="mocha"></div>
-  <iframe src="" id="app"></iframe>
+  <iframe src="" id="corvina-app-connect-app"></iframe>
 
   <!-- <script src='https://unpkg.com/@corvina/corvina-app-connect@0.0.16/dist/index.umd.min.js'></script> -->
   <script src="https://unpkg.com/chai/chai.js"></script>
@@ -21,7 +21,7 @@
     mocha.checkLeaks();
   </script>
   <script type="module">
-    import { CorvinaHost, CorvinaConnect } from 'https://unpkg.com/@corvina/corvina-app-connect@1.1.0-beta.2/dist/index.min.mjs';
+    import { CorvinaHost, CorvinaConnect } from 'https://unpkg.com/@corvina/corvina-app-connect@1.1.1-beta.3/dist/index.min.mjs';
     let { assert } = chai;
     // let { CorvinaHost, CorvinaConnect } = $corvina;
     function sleep(ms) {
@@ -73,7 +73,7 @@
 
       const appUrl = `${window.location.origin}/commonjs/iframe.html?corvinaHost=${encodeURIComponent(hostConfiguration.corvinaHost)}`;
 
-      document.querySelector("#app").src = appUrl;
+      document.querySelector("#corvina-app-connect-app").src = appUrl;
 
       await sleep(200) // time to load the iframe      
 
@@ -81,11 +81,11 @@
 
       await sleep(50) // I need to wait because there is a postMessage round trip between host and connect
 
-      let connect = document.getElementById("app").contentWindow.connect
+      let connect = document.getElementById("corvina-app-connect-app").contentWindow.connect
       assert.equal(connect.jwt, newJwt);
 
       host.dispose();
-      document.querySelector("#app").src = "";
+      document.querySelector("#corvina-app-connect-app").src = "";
     });
 
     it('If I set organizationId in CorvinaHost, then CorvinaConnect will receive that organizationId', async function () {
@@ -102,7 +102,7 @@
 
       const appUrl = `${window.location.origin}/commonjs/iframe.html?corvinaHost=${encodeURIComponent(hostConfiguration.corvinaHost)}`;
 
-      document.querySelector("#app").src = appUrl;
+      document.querySelector("#corvina-app-connect-app").src = appUrl;
 
       await sleep(200) // time to load the iframe      
 
@@ -110,11 +110,11 @@
 
       await sleep(50) // I need to wait because there is a postMessage round trip between host and connect
 
-      let connect = document.getElementById("app").contentWindow.connect
+      let connect = document.getElementById("corvina-app-connect-app").contentWindow.connect
       assert.equal(connect.organizationId, newOrgId);
 
       host.dispose();
-      document.querySelector("#app").src = "";
+      document.querySelector("#corvina-app-connect-app").src = "";
     });
 
     it('If I set theme in CorvinaHost, then CorvinaConnect will receive that theme', async function () {
@@ -146,7 +146,7 @@
 
       let host = await CorvinaHost.create(hostConfiguration)
 
-      let iframe = document.querySelector("#app");
+      let iframe = document.querySelector("#corvina-app-connect-app");
       let waitIframeLoad = () => new Promise((resolve, reject) => {
         iframe.onload = resolve;
         iframe.onerror = reject;
@@ -158,7 +158,7 @@
 
       await waitIframeLoad();
 
-      let connect = document.getElementById("app").contentWindow.connect
+      let connect = document.getElementById("corvina-app-connect-app").contentWindow.connect
 
       assert.equal(JSON.stringify(connect.theme), JSON.stringify(hostConfiguration.theme));
 
@@ -170,7 +170,7 @@
       assert.equal(JSON.stringify(connect.theme), JSON.stringify(newTheme));
 
       host.dispose();
-      document.querySelector("#app").src = "";
+      document.querySelector("#corvina-app-connect-app").src = "";
     });
 
     it('CorvinaConnect is a singleton', async function () {

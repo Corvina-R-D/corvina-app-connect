@@ -5,7 +5,7 @@
 This library enables an application embedded as an iframe in Corvina to retrieve some information such as JWT, organization id, ...
 The iframe id must have a prefix "corvina-app-connect-" and the application must be registered in the Corvina platform.
 
-## How to use this library? ##
+## How to use this library ##
 
 * Using npm:
 
@@ -60,3 +60,9 @@ connect.on(CorvinaConnectEventType.JWT_CHANGED, (jwt: string) => {
     console.log(`JWT changed to ${jwt}`)
 });
 ```
+
+## How to deploy a new version ##
+
+* Update the version in package.json
+* Run `npm run build`
+* Run `npm publish`

@@ -17,7 +17,7 @@ const initHandshake = ({ corvinaHostWindow, corvinaHost }: { corvinaHostWindow: 
             // listen for message from Corvina parent window, that message will contain the context information such as JWT, organizationId and corvinaHost
             const handleInitResponse = (event: MessageEvent<IMessage>) => {
 
-                console.log("CorvinaConnect: onMessage", event.data);
+                console.debug("CorvinaConnect: onMessage", event.data);
 
                 let message: IMessage = event.data;
 
@@ -107,7 +107,7 @@ export class CorvinaConnect implements IDisposable {
 
     private onMessage(event: MessageEvent<IMessage>) {
 
-        console.log("CorvinaConnect: onMessage", event.data);
+        console.debug("CorvinaConnect: onMessage", event.data);
 
         switch (event.data.type) {
             case MessageType.JWT_CHANGED:

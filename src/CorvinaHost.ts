@@ -87,7 +87,7 @@ export class CorvinaHost implements IDisposable {
 
     private onMessage(event: MessageEvent<IMessage>) {
 
-        console.log("CorvinaHost: onMessage", event.data);
+        console.debug("CorvinaHost: onMessage", event.data);
 
         switch (event.data.type) {
             case MessageType.CORVINA_CONNECT_INIT:

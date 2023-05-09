@@ -158,6 +158,8 @@
 
       await waitIframeLoad();
 
+      await sleep(200) // time to load the iframe
+
       let connect = document.getElementById("corvina-app-connect-app").contentWindow.connect
 
       assert.equal(JSON.stringify(connect.theme), JSON.stringify(hostConfiguration.theme));

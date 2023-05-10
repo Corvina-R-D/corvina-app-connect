@@ -65,9 +65,9 @@ You can also trigger a navigation inside Corvina Platform in this way:
 
 ```javascript
 // navigate to the dashboard, same as clicking on the dashboard button in the Corvina menu
-await connect.navigateTo(CorvinaPages.DASHBOARD);
+connect.navigateTo(CorvinaPages.DASHBOARD);
 // navigate to custom page with parameters
-await connect.navigateTo("/another-page?param1=value1&param2=value2");
+connect.navigateTo("/another-page?param1=value1&param2=value2");
 ```
 
 ## How to run the tests ##

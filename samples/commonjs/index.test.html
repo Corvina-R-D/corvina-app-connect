@@ -10,9 +10,8 @@
 
 <body>
   <div id="mocha"></div>
-  <iframe src="" id="corvina-app-connect-app"></iframe>
+  <iframe src="" id="corvina-app-connect-app" title="sample-app-iframe"></iframe>
 
-  <!-- <script src='https://unpkg.com/@corvina/corvina-app-connect@0.0.16/dist/index.umd.min.js'></script> -->
   <script src="https://unpkg.com/chai/chai.js"></script>
   <script src="https://unpkg.com/mocha/mocha.js"></script>
 
@@ -21,11 +20,15 @@
     mocha.checkLeaks();
   </script>
   <script type="module">
-    import { CorvinaHost, CorvinaConnect } from 'https://unpkg.com/@corvina/corvina-app-connect@1.1.2/dist/index.min.mjs';
+    import { CorvinaHost, CorvinaConnect } from '/dist/index.min.mjs';
     let { assert } = chai;
-    // let { CorvinaHost, CorvinaConnect } = $corvina;
     function sleep(ms) {
       return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    function createAppUrl({ origin, corvinaHost }) {
+      const preventCache = Math.random();
+      return `${origin}/samples/commonjs/iframe.html?corvinaHost=${encodeURIComponent(corvinaHost)}&preventCache=${preventCache}`;
     }
 
     it('I can create an instance of CorvinaHost', async function () {
@@ -67,11 +70,10 @@
         organizationId: "1",
       };
       const newJwt = 'new jwt';
-      let onChangedJwt;
 
       let host = await CorvinaHost.create(hostConfiguration)
 
-      const appUrl = `${window.location.origin}/commonjs/iframe.html?corvinaHost=${encodeURIComponent(hostConfiguration.corvinaHost)}`;
+      const appUrl = createAppUrl({ origin: window.location.origin, corvinaHost: hostConfiguration.corvinaHost });
 
       document.querySelector("#corvina-app-connect-app").src = appUrl;
 
@@ -100,7 +102,7 @@
 
       let host = await CorvinaHost.create(hostConfiguration)
 
-      const appUrl = `${window.location.origin}/commonjs/iframe.html?corvinaHost=${encodeURIComponent(hostConfiguration.corvinaHost)}`;
+      const appUrl = createAppUrl({ origin: window.location.origin, corvinaHost: hostConfiguration.corvinaHost });
 
       document.querySelector("#corvina-app-connect-app").src = appUrl;
 
@@ -151,7 +153,7 @@
         iframe.onload = resolve;
         iframe.onerror = reject;
 
-        const appUrl = `${window.location.origin}/commonjs/iframe.html?corvinaHost=${encodeURIComponent(hostConfiguration.corvinaHost)}`;
+        const appUrl = createAppUrl({ origin: window.location.origin, corvinaHost: hostConfiguration.corvinaHost });
 
         iframe.src = appUrl;
       });
@@ -176,7 +178,7 @@
     });
 
     it('CorvinaConnect is a singleton', async function () {
-      let host = await CorvinaHost.create({
+      const host = await CorvinaHost.create({
         jwt: 'xxx',
         corvinaHost: window.location.origin,
         organizationId: "1",
@@ -196,7 +198,41 @@
 
       connect1.dispose();
       connect2.dispose();
+      host.dispose();
     });
+
+    it('I can trigger a navigation from CorvinaConnect to CorvinaHost', async function () {
+      this.slow(400);
+      let pathNavigatedTo = null;
+      const hostConfiguration = {
+        jwt: 'xxx',
+        corvinaHost: window.location.origin,
+        organizationId: "1",
+      }
+      const host = await CorvinaHost.create(hostConfiguration)
+      host.onNavigate(data => {
+        pathNavigatedTo = data.page;
+      })
+
+      const appUrl = createAppUrl({ origin: window.location.origin, corvinaHost: hostConfiguration.corvinaHost });
+
+      document.querySelector("#corvina-app-connect-app").src = appUrl;
+
+      await sleep(200) // time to load the iframe      
+
+      let connect = document.getElementById("corvina-app-connect-app").contentWindow.connect
+
+      assert.isDefined(connect);
+
+      connect.navigateTo('/test');
+
+      await sleep(50);
+
+      assert.equal(pathNavigatedTo, '/test');
+
+      host.dispose();
+      document.querySelector("#corvina-app-connect-app").src = "";
+    })
 
     mocha.run((failures) => {
       if (failures) {

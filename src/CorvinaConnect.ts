@@ -1,4 +1,4 @@
-import { IDisposable, IMessage, MessageType } from "./common";
+import { IDisposable, IMessage, MessageType, CorvinaPages } from "./common";
 import { ITheme } from "./ITheme";
 
 
@@ -26,7 +26,7 @@ const initHandshake = ({ corvinaHostWindow, corvinaHost }: { corvinaHostWindow: 
 
                     window.removeEventListener("message", handleInitResponse, false)
 
-                    resolve(new CorvinaConnect({ jwt, organizationId, corvinaHost, theme }));
+                    resolve(new CorvinaConnect({ jwt, organizationId, corvinaHost, theme, corvinaHostWindow }));
                 }
             };
 
@@ -44,11 +44,12 @@ export class CorvinaConnect implements IDisposable {
     private _organizationId: string;
     private _corvinaHost: string;
     private _theme: ITheme | undefined;
+    private _corvinaHostWindow: Window;
     private _eventCallback: { [key: string]: ((value: any) => void)[] } = {};
     private _onMessageRef: (event: MessageEvent<IMessage>) => void;
     private static _instance: CorvinaConnect | undefined;
 
-    public constructor({ jwt, organizationId, corvinaHost, theme }: { jwt: string, organizationId: string, corvinaHost: string, theme?: ITheme }) {
+    public constructor({ jwt, organizationId, corvinaHost, theme, corvinaHostWindow }: { jwt: string, organizationId: string, corvinaHost: string, theme?: ITheme, corvinaHostWindow: Window }) {
 
         if (!jwt) {
             throw new Error('JWT is required');
@@ -62,10 +63,15 @@ export class CorvinaConnect implements IDisposable {
             throw new Error('CorvinaHost is required');
         }
 
+        if (!corvinaHostWindow) {
+            throw new Error('CorvinaHostWindow is required');
+        }
+
         this._jwt = jwt;
         this._organizationId = organizationId;
         this._corvinaHost = corvinaHost;
         this._theme = theme;
+        this._corvinaHostWindow = corvinaHostWindow;
 
         this._eventCallback = Object.keys(CorvinaConnectEventType).reduce((acc: any, key: string) => {
             acc[key] = [];
@@ -118,6 +124,7 @@ export class CorvinaConnect implements IDisposable {
                 break;
             case MessageType.THEME_CHANGED:
                 this.onThemeChanged(event);
+                break;
             default:
                 break;
         }
@@ -165,6 +172,20 @@ export class CorvinaConnect implements IDisposable {
         }
 
         this._eventCallback[event].push(callback);
+    }
+
+    public navigateTo(page: string | CorvinaPages) { 
+        if (!page) {
+            throw new Error("Path is required");
+        }
+        
+        const message = {
+            type: MessageType.CORVINA_NAVIGATE,
+            payload: {
+                page
+            }
+        } as IMessage
+        this._corvinaHostWindow.postMessage(message, this._corvinaHost);
     }
 
     static async create({ corvinaHost, corvinaHostWindow, timeoutMs }: { corvinaHost: string, corvinaHostWindow?: Window, timeoutMs?: number }): Promise<CorvinaConnect> {

@@ -6,7 +6,7 @@
     <meta http-equiv='X-UA-Compatible' content='IE=edge'>
     <title>Sample</title>
     <meta name='viewport' content='width=device-width, initial-scale=1'>
-    <script src='https://unpkg.com/@corvina/corvina-app-connect@1.1.2/dist/index.umd.min.js'></script>
+    <script src='/dist/index.umd.min.js'></script>
 </head>
 
 <body>
@@ -15,11 +15,11 @@
         (async () => {
 
             try {
-                let corvinaHost = window.location.search.split('corvinaHost=')[1];
+                let corvinaHost = new URL(window.location.href).searchParams.get('corvinaHost');
 
                 let connect = await $corvina.CorvinaConnect.create({ corvinaHost: decodeURIComponent(corvinaHost), corvinaHostWindow: window.parent });
 
-                window.connect = connect
+                window.connect = connect;
             } catch (error) {
                 console.error(error);
             }

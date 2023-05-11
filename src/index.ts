@@ -1,4 +1,4 @@
-export { IDisposable, IMessage, MessageType } from './common'
+export { IDisposable, IMessage, MessageType, CorvinaPages } from './common'
 
 export { CorvinaHost } from './CorvinaHost'
 

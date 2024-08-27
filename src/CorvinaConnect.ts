@@ -22,11 +22,11 @@ const initHandshake = ({ corvinaHostWindow, corvinaHost }: { corvinaHostWindow: 
                 let message: IMessage = event.data;
 
                 if (message.type === MessageType.CORVINA_CONNECT_INIT_RESPONSE) {
-                    let { jwt, organizationId, theme } = message.payload
+                    let { jwt, organizationId, defaultStandardTime, theme } = message.payload
 
                     window.removeEventListener("message", handleInitResponse, false)
 
-                    resolve(new CorvinaConnect({ jwt, organizationId, corvinaHost, theme, corvinaHostWindow }));
+                    resolve(new CorvinaConnect({ jwt, organizationId, corvinaHost, theme, defaultStandardTime, corvinaHostWindow }));
                 }
             };
 
@@ -44,12 +44,13 @@ export class CorvinaConnect implements IDisposable {
     private _organizationId: string;
     private _corvinaHost: string;
     private _theme: ITheme | undefined;
+    private _defaultStandardTime: any;
     private _corvinaHostWindow: Window;
     private _eventCallback: { [key: string]: ((value: any) => void)[] } = {};
     private _onMessageRef: (event: MessageEvent<IMessage>) => void;
     private static _instance: CorvinaConnect | undefined;
 
-    public constructor({ jwt, organizationId, corvinaHost, theme, corvinaHostWindow }: { jwt: string, organizationId: string, corvinaHost: string, theme?: ITheme, corvinaHostWindow: Window }) {
+    public constructor({ jwt, organizationId, corvinaHost, theme, defaultStandardTime, corvinaHostWindow }: { jwt: string, organizationId: string, corvinaHost: string, theme?: ITheme, defaultStandardTime: any, corvinaHostWindow: Window }) {
 
         if (!jwt) {
             throw new Error('JWT is required');
@@ -71,6 +72,7 @@ export class CorvinaConnect implements IDisposable {
         this._organizationId = organizationId;
         this._corvinaHost = corvinaHost;
         this._theme = theme;
+        this._defaultStandardTime = defaultStandardTime;
         this._corvinaHostWindow = corvinaHostWindow;
 
         this._eventCallback = Object.keys(CorvinaConnectEventType).reduce((acc: any, key: string) => {
@@ -109,6 +111,10 @@ export class CorvinaConnect implements IDisposable {
 
     get theme(): ITheme | undefined {
         return this._theme;
+    }
+
+    get defaultStandardTime(): any {
+        return this._defaultStandardTime;
     }
 
     private onMessage(event: MessageEvent<IMessage>) {

@@ -6,6 +6,7 @@ export class CorvinaHost implements IDisposable {
   private _organizationId: string;
   private _corvinaHost: string;
   private _theme: ITheme | undefined;
+  private _defaultStandardTime: any;
   private _onMessageRef: (event: MessageEvent<IMessage>) => void;
   private _onNavigateCallback:
     | ((input: { page: string | CorvinaPages }) => void)
@@ -16,17 +17,19 @@ export class CorvinaHost implements IDisposable {
     organizationId,
     corvinaHost,
     theme,
+    defaultStandardTime,
   }: {
     jwt: string;
     organizationId: string;
     corvinaHost: string;
     theme?: ITheme;
+    defaultStandardTime: any;
   }) {
     this._jwt = jwt;
     this._organizationId = organizationId;
     this._corvinaHost = corvinaHost;
     this._theme = theme;
-
+    this._defaultStandardTime = defaultStandardTime;
     this._onMessageRef = this.onMessage.bind(this);
     window.addEventListener("message", this._onMessageRef);
   }
@@ -76,6 +79,14 @@ export class CorvinaHost implements IDisposable {
     };
 
     this.sendMessageToAllFrames(message);
+  }
+
+  set defaultStandardTime(defaultStandardTime: any) {
+    this._defaultStandardTime = defaultStandardTime;
+  }
+
+  get defaultStandardTime(): any {
+    return this._defaultStandardTime;
   }
 
   get jwt(): string {
@@ -130,6 +141,7 @@ export class CorvinaHost implements IDisposable {
         organizationId: this._organizationId,
         corvinaHost: this._corvinaHost,
         theme: this._theme,
+        defaultStandardTime: this._defaultStandardTime,
       },
     };
 
@@ -145,12 +157,14 @@ export class CorvinaHost implements IDisposable {
     organizationId,
     corvinaHost,
     theme,
+    defaultStandardTime,
   }: {
     jwt: string;
     organizationId: string;
     corvinaHost: string;
     theme?: ITheme;
+    defaultStandardTime: any;
   }): Promise<CorvinaHost> {
-    return new CorvinaHost({ jwt, organizationId, corvinaHost, theme });
+    return new CorvinaHost({ jwt, organizationId, corvinaHost, theme, defaultStandardTime });
   }
 }

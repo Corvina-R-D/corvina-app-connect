@@ -3,8 +3,11 @@ import { ITheme } from "./ITheme";
 
 export class CorvinaHost implements IDisposable {
   private _jwt: string;
+  private _username: string;
   private _organizationId: string;
+  private _organizationResourceId: string;
   private _corvinaHost: string;
+  private _corvinaDomain: string;
   private _theme: ITheme | undefined;
   private _defaultStandardTime: any;
   private _onMessageRef: (event: MessageEvent<IMessage>) => void;
@@ -14,20 +17,29 @@ export class CorvinaHost implements IDisposable {
 
   private constructor({
     jwt,
+    username,
     organizationId,
+    organizationResourceId,
     corvinaHost,
+    corvinaDomain,
     theme,
     defaultStandardTime,
   }: {
     jwt: string;
+    username: string;
     organizationId: string;
+    organizationResourceId: string;
     corvinaHost: string;
+    corvinaDomain: string;
     theme?: ITheme;
     defaultStandardTime: any;
   }) {
     this._jwt = jwt;
+    this._username = username;
     this._organizationId = organizationId;
+    this._organizationResourceId = organizationResourceId;
     this._corvinaHost = corvinaHost;
+    this._corvinaDomain = corvinaDomain;
     this._theme = theme;
     this._defaultStandardTime = defaultStandardTime;
     this._onMessageRef = this.onMessage.bind(this);
@@ -55,6 +67,19 @@ export class CorvinaHost implements IDisposable {
     this.sendMessageToAllFrames(message);
   }
 
+  set username(username: string) {
+    this._username = username;
+
+    const message: IMessage = {
+      type: MessageType.USER_CHANGED,
+      payload: {
+        username,
+      },
+    };
+
+    this.sendMessageToAllFrames(message);
+  }
+
   set organizationId(organizationId: string) {
     this._organizationId = organizationId;
 
@@ -62,6 +87,19 @@ export class CorvinaHost implements IDisposable {
       type: MessageType.ORGANIZATION_ID_CHANGED,
       payload: {
         organizationId,
+      },
+    };
+
+    this.sendMessageToAllFrames(message);
+  }
+
+  set organizationResourceId(organizationResourceId: string) {
+    this._organizationResourceId = organizationResourceId;
+
+    const message: IMessage = {
+      type: MessageType.ORGANIZATION_RESOURCE_ID_CHANGED,
+      payload: {
+        organizationResourceId,
       },
     };
 
@@ -138,8 +176,11 @@ export class CorvinaHost implements IDisposable {
       type: MessageType.CORVINA_CONNECT_INIT_RESPONSE,
       payload: {
         jwt: this._jwt,
+        username: this._username,
         organizationId: this._organizationId,
+        organizationResourceId: this._organizationResourceId,
         corvinaHost: this._corvinaHost,
+        corvinaDomain: this._corvinaDomain,
         theme: this._theme,
         defaultStandardTime: this._defaultStandardTime,
       },
@@ -154,17 +195,23 @@ export class CorvinaHost implements IDisposable {
 
   static async create({
     jwt,
+    username,
     organizationId,
+    organizationResourceId,
     corvinaHost,
+    corvinaDomain,
     theme,
     defaultStandardTime,
   }: {
     jwt: string;
+    username: string;
     organizationId: string;
+    organizationResourceId: string;
     corvinaHost: string;
+    corvinaDomain: string;
     theme?: ITheme;
     defaultStandardTime: any;
   }): Promise<CorvinaHost> {
-    return new CorvinaHost({ jwt, organizationId, corvinaHost, theme, defaultStandardTime });
+    return new CorvinaHost({ jwt, username, organizationId, organizationResourceId, corvinaHost, corvinaDomain, theme, defaultStandardTime });
   }
 }

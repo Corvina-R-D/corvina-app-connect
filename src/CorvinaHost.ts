@@ -14,6 +14,7 @@ export class CorvinaHost implements IDisposable {
   private _onNavigateCallback:
     | ((input: { page: string | CorvinaPages }) => void)
     | undefined;
+  private _brandName: string;
 
   private constructor({
     jwt,
@@ -24,6 +25,7 @@ export class CorvinaHost implements IDisposable {
     corvinaDomain,
     theme,
     defaultStandardTime,
+    brandName,
   }: {
     jwt: string;
     username: string;
@@ -33,6 +35,7 @@ export class CorvinaHost implements IDisposable {
     corvinaDomain: string;
     theme?: ITheme;
     defaultStandardTime: any;
+    brandName: string;
   }) {
     this._jwt = jwt;
     this._username = username;
@@ -43,6 +46,7 @@ export class CorvinaHost implements IDisposable {
     this._theme = theme;
     this._defaultStandardTime = defaultStandardTime;
     this._onMessageRef = this.onMessage.bind(this);
+    this._brandName = brandName;
     window.addEventListener("message", this._onMessageRef);
   }
 
@@ -119,6 +123,16 @@ export class CorvinaHost implements IDisposable {
     this.sendMessageToAllFrames(message);
   }
 
+  set brandName(brandName: string) {
+    this._brandName = brandName;
+    const message: IMessage = {
+      type: MessageType.BRAND_NAME_CHANGED,
+      payload: {
+        brandName,
+      },
+    };
+  }
+
   set defaultStandardTime(defaultStandardTime: any) {
     this._defaultStandardTime = defaultStandardTime;
   }
@@ -137,6 +151,10 @@ export class CorvinaHost implements IDisposable {
 
   get theme(): ITheme | undefined {
     return this._theme;
+  }
+
+  get brandName(): string {
+    return this._brandName;
   }
 
   private sendMessageToAllFrames(message: IMessage) {
@@ -183,6 +201,7 @@ export class CorvinaHost implements IDisposable {
         corvinaDomain: this._corvinaDomain,
         theme: this._theme,
         defaultStandardTime: this._defaultStandardTime,
+        brandName: this._brandName,	
       },
     };
 
@@ -202,6 +221,7 @@ export class CorvinaHost implements IDisposable {
     corvinaDomain,
     theme,
     defaultStandardTime,
+    brandName,
   }: {
     jwt: string;
     username: string;
@@ -211,7 +231,8 @@ export class CorvinaHost implements IDisposable {
     corvinaDomain: string;
     theme?: ITheme;
     defaultStandardTime: any;
+    brandName: string;
   }): Promise<CorvinaHost> {
-    return new CorvinaHost({ jwt, username, organizationId, organizationResourceId, corvinaHost, corvinaDomain, theme, defaultStandardTime });
+    return new CorvinaHost({ jwt, username, organizationId, organizationResourceId, corvinaHost, corvinaDomain, theme, defaultStandardTime, brandName });
   }
 }

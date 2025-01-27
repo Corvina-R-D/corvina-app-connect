@@ -12,6 +12,7 @@ export enum MessageType {
     USER_CHANGED = "USER_CHANGED",
     THEME_CHANGED = "THEME_CHANGED",
     CORVINA_NAVIGATE = "CORVINA_NAVIGATE",
+    BRAND_NAME_CHANGED = "BRAND_NAME_CHANGED",
 }
 
 export enum CorvinaPages {

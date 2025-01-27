@@ -8,6 +8,7 @@ export enum CorvinaConnectEventType {
     JWT_CHANGED = "JWT_CHANGED",
     USER_CHANGED = "USER_CHANGED",
     THEME_CHANGED = "THEME_CHANGED",
+    BRAND_NAME_CHANGED = "BRAND_NAME_CHANGED",
 }
 
 const initHandshake = ({ corvinaHostWindow, corvinaHost }: { corvinaHostWindow: Window, corvinaHost: string }): Promise<CorvinaConnect> => {
@@ -24,11 +25,11 @@ const initHandshake = ({ corvinaHostWindow, corvinaHost }: { corvinaHostWindow: 
                 let message: IMessage = event.data;
 
                 if (message.type === MessageType.CORVINA_CONNECT_INIT_RESPONSE) {
-                    let { corvinaDomain, jwt, username, organizationId, organizationResourceId, defaultStandardTime, theme } = message.payload
+                    let { corvinaDomain, jwt, username, organizationId, organizationResourceId, defaultStandardTime, theme, brandName } = message.payload
 
                     window.removeEventListener("message", handleInitResponse, false)
 
-                    resolve(new CorvinaConnect({ jwt, username, organizationId, organizationResourceId, corvinaHost, corvinaDomain, theme, defaultStandardTime, corvinaHostWindow }));
+                    resolve(new CorvinaConnect({ jwt, username, organizationId, organizationResourceId, corvinaHost, corvinaDomain, theme, defaultStandardTime, corvinaHostWindow, brandName }));
                 }
             };
 
@@ -53,9 +54,10 @@ export class CorvinaConnect implements IDisposable {
     private _corvinaHostWindow: Window;
     private _eventCallback: { [key: string]: ((value: any) => void)[] } = {};
     private _onMessageRef: (event: MessageEvent<IMessage>) => void;
+    private _brandName: string;
     private static _instance: CorvinaConnect | undefined;
 
-    public constructor({ jwt, username, organizationId, organizationResourceId, corvinaHost, corvinaDomain, theme, defaultStandardTime, corvinaHostWindow }: { jwt: string, username: string, organizationId: string, organizationResourceId: string, corvinaHost: string, corvinaDomain: string, theme?: ITheme, defaultStandardTime: any, corvinaHostWindow: Window }) {
+    public constructor({ jwt, username, organizationId, organizationResourceId, corvinaHost, corvinaDomain, theme, brandName, defaultStandardTime, corvinaHostWindow }: { jwt: string, username: string, organizationId: string, organizationResourceId: string, corvinaHost: string, corvinaDomain: string, theme?: ITheme, brandName: string, defaultStandardTime: any, corvinaHostWindow: Window }) {
 
         if (!jwt) {
             throw new Error('JWT is required');
@@ -94,6 +96,7 @@ export class CorvinaConnect implements IDisposable {
         this._theme = theme;
         this._defaultStandardTime = defaultStandardTime;
         this._corvinaHostWindow = corvinaHostWindow;
+        this._brandName = brandName;
 
         this._eventCallback = Object.keys(CorvinaConnectEventType).reduce((acc: any, key: string) => {
             acc[key] = [];
@@ -149,6 +152,10 @@ export class CorvinaConnect implements IDisposable {
         return this._defaultStandardTime;
     }
 
+    get brandName(): string {
+        return this._brandName;
+    }
+
     private onMessage(event: MessageEvent<IMessage>) {
 
         console.debug("CorvinaConnect: onMessage", event.data);
@@ -169,6 +176,9 @@ export class CorvinaConnect implements IDisposable {
             case MessageType.THEME_CHANGED:
                 this.onThemeChanged(event);
                 break;
+            case MessageType.BRAND_NAME_CHANGED:
+                this.onBrandNameChanged(event)
+                break
             default:
                 break;
         }
@@ -179,6 +189,14 @@ export class CorvinaConnect implements IDisposable {
 
         for (const callback of this._eventCallback[CorvinaConnectEventType.THEME_CHANGED]) {
             callback(this._theme);
+        }
+    }
+
+    private onBrandNameChanged(event: MessageEvent<IMessage>) {
+        this._brandName = event.data.payload.brandName;
+
+        for (const callback of this._eventCallback[CorvinaConnectEventType.BRAND_NAME_CHANGED]) {
+            callback(this._brandName);
         }
     }
 

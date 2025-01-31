@@ -1,4 +1,5 @@
 import { IDisposable, IMessage, MessageType, CorvinaPages } from "./common";
+import { UrlWatcher } from "./hrefwatcher";
 import { ITheme } from "./ITheme";
 
 
@@ -9,9 +10,10 @@ export enum CorvinaConnectEventType {
     USER_CHANGED = "USER_CHANGED",
     THEME_CHANGED = "THEME_CHANGED",
     BRAND_NAME_CHANGED = "BRAND_NAME_CHANGED",
+    IFRAME_HREF_CHANGED = "IFRAME_HREF_CHANGED",
 }
 
-const initHandshake = ({ corvinaHostWindow, corvinaHost }: { corvinaHostWindow: Window, corvinaHost: string }): Promise<CorvinaConnect> => {
+const initHandshake = ({ currentWindow, corvinaHostWindow, corvinaHost }: { currentWindow: Window, corvinaHostWindow: Window, corvinaHost: string }): Promise<CorvinaConnect> => {
     return new Promise((resolve, reject) => {
         try {
             // postMessage to Corvina parent window
@@ -27,13 +29,13 @@ const initHandshake = ({ corvinaHostWindow, corvinaHost }: { corvinaHostWindow: 
                 if (message.type === MessageType.CORVINA_CONNECT_INIT_RESPONSE) {
                     let { corvinaDomain, jwt, username, organizationId, organizationResourceId, defaultStandardTime, theme, brandName } = message.payload
 
-                    window.removeEventListener("message", handleInitResponse, false)
+                    currentWindow.removeEventListener("message", handleInitResponse, false)
 
-                    resolve(new CorvinaConnect({ jwt, username, organizationId, organizationResourceId, corvinaHost, corvinaDomain, theme, defaultStandardTime, corvinaHostWindow, brandName }));
+                    resolve(new CorvinaConnect({ jwt, username, organizationId, organizationResourceId, corvinaHost, corvinaDomain, theme, defaultStandardTime, currentWindow, corvinaHostWindow, brandName }));
                 }
             };
 
-            window.addEventListener('message', handleInitResponse);
+            currentWindow.addEventListener('message', handleInitResponse);
 
         } catch (error) {
             reject(error);
@@ -55,9 +57,12 @@ export class CorvinaConnect implements IDisposable {
     private _eventCallback: { [key: string]: ((value: any) => void)[] } = {};
     private _onMessageRef: (event: MessageEvent<IMessage>) => void;
     private _brandName: string;
+    private _href: string | undefined;
+    private _urlWatcher: UrlWatcher | undefined;
     private static _instance: CorvinaConnect | undefined;
+    private _window: Window;
 
-    public constructor({ jwt, username, organizationId, organizationResourceId, corvinaHost, corvinaDomain, theme, brandName, defaultStandardTime, corvinaHostWindow }: { jwt: string, username: string, organizationId: string, organizationResourceId: string, corvinaHost: string, corvinaDomain: string, theme?: ITheme, brandName: string, defaultStandardTime: any, corvinaHostWindow: Window }) {
+    public constructor({ jwt, username, organizationId, organizationResourceId, corvinaHost, corvinaDomain, theme, brandName, defaultStandardTime, currentWindow, corvinaHostWindow }: { jwt: string, username: string, organizationId: string, organizationResourceId: string, corvinaHost: string, corvinaDomain: string, theme?: ITheme, brandName: string, defaultStandardTime: any, currentWindow ?: Window, corvinaHostWindow: Window }) {
 
         if (!jwt) {
             throw new Error('JWT is required');
@@ -97,6 +102,7 @@ export class CorvinaConnect implements IDisposable {
         this._defaultStandardTime = defaultStandardTime;
         this._corvinaHostWindow = corvinaHostWindow;
         this._brandName = brandName;
+        this._window = currentWindow || window;
 
         this._eventCallback = Object.keys(CorvinaConnectEventType).reduce((acc: any, key: string) => {
             acc[key] = [];
@@ -105,7 +111,7 @@ export class CorvinaConnect implements IDisposable {
 
         // listener on postMessage from Corvina parent window
         this._onMessageRef = this.onMessage.bind(this);
-        window.addEventListener("message", this._onMessageRef);
+        this._window.addEventListener("message", this._onMessageRef);
     }
 
     static dispose() {
@@ -117,7 +123,9 @@ export class CorvinaConnect implements IDisposable {
     }
 
     dispose() {
-        window.removeEventListener("message", this._onMessageRef);
+        this._window.removeEventListener("message", this._onMessageRef);
+        this._urlWatcher?.dispose();
+        this._urlWatcher = undefined;
     }
 
     get jwt(): string {
@@ -179,6 +187,9 @@ export class CorvinaConnect implements IDisposable {
             case MessageType.BRAND_NAME_CHANGED:
                 this.onBrandNameChanged(event)
                 break
+            case MessageType.IFRAME_HREF_CHANGED:
+                this.onIframeHrefChanged(event);
+                break;
             default:
                 break;
         }
@@ -232,6 +243,12 @@ export class CorvinaConnect implements IDisposable {
         }
     }
 
+    private onIframeHrefChanged(event: MessageEvent<IMessage>) {
+        for (const callback of this._eventCallback[CorvinaConnectEventType.IFRAME_HREF_CHANGED]) {
+            callback(event.data.payload);
+        }
+    }
+
     public off(event: CorvinaConnectEventType) {
         if (!event) {
             throw new Error("Event name is required");
@@ -266,12 +283,14 @@ export class CorvinaConnect implements IDisposable {
         this._corvinaHostWindow.postMessage(message, this._corvinaHost);
     }
 
-    static async create({ corvinaHost, corvinaHostWindow, timeoutMs }: { corvinaHost: string, corvinaHostWindow?: Window, timeoutMs?: number }): Promise<CorvinaConnect> {
+    static async create({ corvinaHost, currentWindow, corvinaHostWindow, timeoutMs }: { corvinaHost: string, currentWindow?: Window, corvinaHostWindow?: Window, timeoutMs?: number }): Promise<CorvinaConnect> {
 
+        currentWindow = currentWindow || window;
+        
         if (!this._instance) {
-            corvinaHostWindow = corvinaHostWindow || window.parent.window;
+            corvinaHostWindow = corvinaHostWindow || currentWindow.parent.window;
 
-            const initHandshakePromise = initHandshake({ corvinaHostWindow, corvinaHost });
+            const initHandshakePromise = initHandshake({ currentWindow, corvinaHostWindow, corvinaHost });
             const timeoutPromise = new Promise((resolve, reject) => {
                 setTimeout(reject, timeoutMs ?? 5000, 'Create timeout reached');
             });
@@ -281,4 +300,30 @@ export class CorvinaConnect implements IDisposable {
 
         return this._instance;
     }
+
+    enableNavigationSync() {
+        // initialize appHref
+        this._href = this._window.location.href;
+    
+        this._urlWatcher = new UrlWatcher(( {type} ) => {
+          const newHref = this._window.location.href;
+          if (newHref !== this._href) {
+            const message: IMessage = {
+              type: MessageType.IFRAME_HREF_CHANGED,
+              payload: {
+                href: this._window.location.href,
+                type
+              },
+            }
+            this._corvinaHostWindow.postMessage(message, this._corvinaHost);
+          }
+        }, this._window);  
+      }
+    
+    disableNavigationSync() {
+        this._urlWatcher?.dispose();
+        this._urlWatcher = undefined;
+    }
+          
+    
 }

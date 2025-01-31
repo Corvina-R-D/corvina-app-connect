@@ -17,7 +17,8 @@
     "bundle:esm:min": "terser --ecma 6 --compress --mangle --module -o dist/index.min.mjs -- dist/index.mjs && gzip -9 -c dist/index.min.mjs > dist/index.min.mjs.gz",
     "bundle:umd": "rollup dist/index.js --file dist/index.umd.js --format umd --name '$corvina'",
     "bundle:umd:min": "terser --ecma 6 --compress --mangle -o dist/index.umd.min.js -- dist/index.umd.js && gzip -9 -c dist/index.umd.min.js > dist/index.umd.min.js.gz",
-    "test": "npm run build && http-server -c-1",
+    "e2etest": "npm run build && http-server -c-1",
+    "test": "jest",
     "deploy": "npm publish --access public",
     "deploy:beta": "npm publish --access public --tag beta"
   },
@@ -35,11 +36,14 @@
   },
   "homepage": "https://bitbucket.org/exorint/corvina-app-connect#readme",
   "devDependencies": {
+    "@types/jest": "^29.5.14",
     "@types/jsdom": "^20.0.0",
     "browserify": "^17.0.0",
     "http-server": "^14.1.1",
+    "jest-environment-jsdom": "^29.7.0",
     "rollup": "^2.79.0",
     "terser": "^5.15.0",
+    "ts-jest": "^29.2.5",
     "typescript": "^4.8.3"
   },
   "packageManager": "yarn@1.22.21+sha1.1959a18351b811cdeedbd484a8f86c3cc3bbaf72"

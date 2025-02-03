@@ -70,6 +70,26 @@ connect.navigateTo(CorvinaPages.DASHBOARD);
 connect.navigateTo("/another-page?param1=value1&param2=value2");
 ```
 
+## Navigation synchronization ##
+
+The library provides a way to synchronize the navigation between the application and Corvina Platform.
+
+When enabled, the internal location of the application can be exposed as query parameter `appHref` in the iframe URL.
+
+This feature must be explicitly enabled from the application side by calling `enableNavigationSync`.
+
+Once enable, app location is automatically exposed through the `appHref` query parameter, and  the app can listen to the 
+`IFRAME_HREF_CHANGED` event to update its location.
+
+```javascript
+connect.enableNavigationSync();
+
+connect.on(CorvinaConnectEventType.IFRAME_HREF_CHANGED, ({ href, type }) => {
+    iframeWindow.history.pushState({}, '', href);
+});
+```
+
+
 ## How to run the tests ##
 
 * Run `npm run test`

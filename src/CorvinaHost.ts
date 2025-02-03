@@ -1,4 +1,5 @@
-import { CorvinaPages, IDisposable, IMessage, MessageType } from "./common";
+import { appHrefQueryString, CorvinaPages, IDisposable, IMessage, MessageType } from "./common";
+import { UrlWatcher } from "./hrefwatcher";
 import { ITheme } from "./ITheme";
 
 export class CorvinaHost implements IDisposable {
@@ -15,6 +16,9 @@ export class CorvinaHost implements IDisposable {
     | ((input: { page: string | CorvinaPages }) => void)
     | undefined;
   private _brandName: string;
+  private _onIFrameHrefChanged: ((href: string) => void) | undefined;
+  private _urlWatcher: UrlWatcher | undefined;
+  private _appHref: string | undefined;
 
   private constructor({
     jwt,
@@ -52,6 +56,8 @@ export class CorvinaHost implements IDisposable {
 
   dispose() {
     window.removeEventListener("message", this._onMessageRef);
+    this._urlWatcher?.dispose();
+    this._urlWatcher = undefined;
   }
 
   onNavigate(callback: (input: { page: string | CorvinaPages }) => void): void {
@@ -184,6 +190,14 @@ export class CorvinaHost implements IDisposable {
         }
         this._onNavigateCallback?.(event.data.payload);
         break;
+      case MessageType.IFRAME_HREF_CHANGED:
+        if (event.data.payload.href && this._appHref !== event.data.payload.href) {
+          this._appHref = event.data.payload.href;
+          if (this._urlWatcher && this._appHref) {
+            this._urlWatcher.setAppHref(this._appHref, event.data.payload.type);
+          }
+        }
+        break;
       default:
         break;
     }
@@ -234,5 +248,30 @@ export class CorvinaHost implements IDisposable {
     brandName: string;
   }): Promise<CorvinaHost> {
     return new CorvinaHost({ jwt, username, organizationId, organizationResourceId, corvinaHost, corvinaDomain, theme, defaultStandardTime, brandName });
+  }
+
+  enableNavigationSync() {
+    // initialize appHref
+    this._appHref = UrlWatcher.extractAppHref();
+
+    this._urlWatcher = new UrlWatcher(({type}) => {
+      const newAppHref = UrlWatcher.extractAppHref();
+      if (newAppHref !== this._appHref) {
+        const message: IMessage = {
+          type: MessageType.IFRAME_HREF_CHANGED,
+          payload: {
+            href: newAppHref,
+            type 
+          },
+        }
+        this.sendMessageToAllFrames(message);  
+        this._appHref = newAppHref;
+      }
+    });  
+  }
+
+  disableNavigationSync() {
+    this._urlWatcher?.dispose();
+    this._urlWatcher = undefined;
   }
 }

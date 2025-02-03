@@ -13,6 +13,7 @@ export enum MessageType {
     THEME_CHANGED = "THEME_CHANGED",
     CORVINA_NAVIGATE = "CORVINA_NAVIGATE",
     BRAND_NAME_CHANGED = "BRAND_NAME_CHANGED",
+    IFRAME_HREF_CHANGED = "IFRAME_HREF_CHANGED",
 }
 
 export enum CorvinaPages {
@@ -36,3 +37,5 @@ export enum CorvinaPages {
 export interface IDisposable {
     dispose(): void;
 }
+
+export const appHrefQueryString = 'appHref';

@@ -29,6 +29,7 @@ export enum CorvinaPages {
     IAM_USERS = "iam-users",
     IAM_ROLES = "iam-roles",
     DEALER = "dealer",
+    AUDIT = "audit", // deprecated
     LOG = "log",
 }
 

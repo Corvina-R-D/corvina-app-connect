@@ -1,6 +1,6 @@
 {
   "name": "@corvina/corvina-app-connect",
-  "version": "1.6.0",
+  "version": "1.6.1",
   "description": "This library enables an application embedded as an iframe in Corvina to retrieve some information such as JWT, organization id, ...",
   "main": "dist/index.js",
   "module": "dist/index.min.mjs",

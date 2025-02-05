@@ -301,17 +301,17 @@ export class CorvinaConnect implements IDisposable {
         return this._instance;
     }
 
-    enableNavigationSync() {
+    enableNavigationSync(filterNewHref : (newHref: string) => string = (newHref) => newHref) {
         // initialize appHref
         this._href = this._window.location.href;
     
         this._urlWatcher = new UrlWatcher(( {type} ) => {
-          const newHref = this._window.location.href;
+          const newHref = filterNewHref(this._window.location.href);
           if (newHref !== this._href) {
             const message: IMessage = {
               type: MessageType.IFRAME_HREF_CHANGED,
               payload: {
-                href: this._window.location.href,
+                href: newHref,
                 type
               },
             }

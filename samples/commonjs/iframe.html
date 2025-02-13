@@ -17,6 +17,10 @@
             try {
                 let corvinaHost = new URL(window.location.href).searchParams.get('corvinaHost');
 
+                if (!corvinaHost) {
+                    throw new Error("corvinaHost parameter is missing from the URL");
+                }
+
                 let connect = await $corvina.CorvinaConnect.create({ corvinaHost: decodeURIComponent(corvinaHost), corvinaHostWindow: window.parent });
 
                 window.connect = connect;

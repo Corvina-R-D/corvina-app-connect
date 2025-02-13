@@ -26,13 +26,10 @@
     "type": "git",
     "url": "git+ssh://git@bitbucket.org/exorint/corvina-app-connect.git"
   },
-  "keywords": [
-    "corvina"
-  ],
-  "author": "",
+  "keywords": ["corvina", "app", "connect", "host", "iframe"],
   "license": "ISC",
   "bugs": {
-    "url": "https://bitbucket.org/exorint/corvina-app-connect/issues"
+    "email": "support@corvina.io"
   },
   "homepage": "https://bitbucket.org/exorint/corvina-app-connect#readme",
   "devDependencies": {

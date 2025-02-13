@@ -1,16 +1,22 @@
 import { CorvinaConnect, CorvinaConnectEventType } from './CorvinaConnect';
 import { CorvinaHost } from './CorvinaHost';
-import { IMessage, MessageType } from './common';
+import { IJwtAppMap, IMessage, MessageType } from './common';
 
 
 describe('CorvinaHost', () => {
     let corvinaHost: CorvinaHost;
-    const jwt = 'test-jwt';
+    
+    const iframeUrl = 'http://iframe';
+    const jwtApp = new Map() as IJwtAppMap;
+    jwtApp.set(iframeUrl, {
+        jwt: 'test-jwt',
+        iframeOrigin: iframeUrl,
+    });
     const username = 'test-user';
     const organizationId = 'test-org-id';
     const organizationResourceId = 'test-org-resource-id';
-    const corvinaHostUrl = 'http://localhost';
     const corvinaDomain = 'localhost';
+    const corvinaHostUrl = "http://" + corvinaDomain;
     const defaultStandardTime = new Date();
     const brandName = 'TestBrand';
 
@@ -26,7 +32,7 @@ describe('CorvinaHost', () => {
         }
 
         // ensure the main window, when posting 
-        const postMessageFromIframeHamdler = {
+        const postMessageFromIframeHandler = {
             get: function (target: any, prop: any, receiver: any) {
                 if (prop === 'postMessage') {
                     return (...args: any[]) => {
@@ -34,7 +40,7 @@ describe('CorvinaHost', () => {
                             'message', {
                             data: { ...args[0] },
                             source: iframeWindow,
-                            origin: corvinaHostUrl
+                            origin: iframeUrl,
                         }), args[1]);
                     }
                 }
@@ -42,7 +48,7 @@ describe('CorvinaHost', () => {
             },
         };
         return {
-            mainWindowFromIFrame: new Proxy(mainWindow, postMessageFromIframeHamdler),
+            mainWindowFromIFrame: new Proxy(mainWindow, postMessageFromIframeHandler),
             iframeWindow,
         }
     }
@@ -50,7 +56,7 @@ describe('CorvinaHost', () => {
 
     beforeEach(async () => {
         corvinaHost = await CorvinaHost.create({
-            jwt,
+            jwtApp,
             username,
             organizationId,
             organizationResourceId,
@@ -86,10 +92,11 @@ describe('CorvinaHost', () => {
 
         window.dispatchEvent(event);
 
+        /*
         const responseMessage: IMessage = {
             type: MessageType.CORVINA_CONNECT_INIT_RESPONSE,
             payload: {
-                jwt,
+                jwt: jwtApp.get(iframeUrl)!.jwt,
                 username,
                 organizationId,
                 organizationResourceId,
@@ -100,6 +107,7 @@ describe('CorvinaHost', () => {
                 brandName,
             },
         };
+        */
 
         expect(postMessageMocked).toHaveBeenCalledTimes(1);
 
@@ -134,16 +142,15 @@ describe('CorvinaHost', () => {
 
     it('host synchronization', async () => {
         const iframe = document.createElement('iframe');
-        iframe.src = 'http://iframe/#/new-path-1'; // Set the iframe src to the desired URL
+        iframe.src = iframeUrl + '/#/new-path-1'; // Set the iframe src to the desired URL
         iframe.id = 'corvina-app-connect-test';
-
 
         document.body.appendChild(iframe);
 
         const { iframeWindow, mainWindowFromIFrame } = patchWindowObjects({ mainWindow: window, iframeWindow: iframe.contentWindow! });
 
         const connect = await CorvinaConnect.create({
-            corvinaHost: 'https://localhost',
+            corvinaHost: 'http://localhost',
             currentWindow: iframeWindow,
             corvinaHostWindow: mainWindowFromIFrame
         });
@@ -155,7 +162,7 @@ describe('CorvinaHost', () => {
             iframeWindow.history.pushState({}, '', href);
         });
 
-        iframeWindow.history.pushState({}, '', 'http://iframe/#/new-path-2');
+        iframeWindow.history.pushState({}, '', iframeUrl + '/#/new-path-2');
         // sleep 100ms
         await new Promise(resolve => setTimeout(resolve, 100));
 
@@ -175,7 +182,7 @@ describe('CorvinaHost', () => {
         expect(window.history.length).toBe(3);
 
         // host synchronization without history tracking (using replaceState)
-        iframeWindow.history.replaceState({}, '', 'http://iframe/#/new-path-4');
+        iframeWindow.history.replaceState({}, '', iframeUrl + '/#/new-path-4');
 
         await new Promise(resolve => setTimeout(resolve, 100));
         expect(window.location.href).toContain('new-path-4');
@@ -188,4 +195,91 @@ describe('CorvinaHost', () => {
 
         document.body.removeChild(iframe);
     }, 30000);
+
+    it('send JWT_CHANGED message to target iframes only', async () => {
+        // two iframes for different apps on a page
+        const iframe1 = document.createElement('iframe');
+        const url1 = 'http://iframe1';
+        iframe1.src = url1;
+        iframe1.id = 'corvina-app-connect-test-1';
+        document.body.appendChild(iframe1);
+
+        const iframe2 = document.createElement('iframe');
+        const url2 = 'http://iframe2';
+        iframe2.src = url2;
+        iframe2.id = 'corvina-app-connect-test-2';
+        document.body.appendChild(iframe2);
+
+        const { iframeWindow: iframeWindow1, mainWindowFromIFrame: mainWindowFromIFrame1 } = patchWindowObjects({ mainWindow: window, iframeWindow: iframe1.contentWindow! });
+        const { iframeWindow: iframeWindow2, mainWindowFromIFrame: mainWindowFromIFrame2 } = patchWindowObjects({ mainWindow: window, iframeWindow: iframe2.contentWindow! });
+
+        const connect1 = await CorvinaConnect.create({
+            corvinaHost: 'http://localhost',
+            currentWindow: iframeWindow1,
+            corvinaHostWindow: mainWindowFromIFrame1
+        });
+
+        const connect2 = await CorvinaConnect.create({
+            corvinaHost: 'http://localhost',
+            currentWindow: iframeWindow2,
+            corvinaHostWindow: mainWindowFromIFrame2
+        });
+
+        const postMessageMocked1 = jest.spyOn(iframe1.contentWindow!, 'postMessage');
+        const postMessageMocked2 = jest.spyOn(iframe2.contentWindow!, 'postMessage');
+        
+        corvinaHost.setJwtApp({
+            jwt: 'jwt1',
+            iframeOrigin: url1,
+        })
+
+        corvinaHost.setJwtApp({
+            jwt: 'jwt2',
+            iframeOrigin: url2,
+        })
+
+        expect(postMessageMocked1).toHaveBeenCalledTimes(1);
+        expect(postMessageMocked1).toHaveBeenCalledWith(
+            {payload: {jwt: "jwt1"}, type: "JWT_CHANGED"}, {targetOrigin: "http://iframe1/"}
+        );
+        expect(postMessageMocked2).toHaveBeenCalledTimes(1);
+        expect(postMessageMocked2).toHaveBeenCalledWith(
+            {payload: {jwt: "jwt2"}, type: "JWT_CHANGED"}, {targetOrigin: "http://iframe2/"}
+        );
+
+        // add a second iframe on the page for app1
+        const iframe3 = document.createElement('iframe');
+        iframe3.src = url1;
+        iframe3.id = 'corvina-app-connect-test-3';
+        document.body.appendChild(iframe3);
+
+        const { iframeWindow: iframeWindow3, mainWindowFromIFrame: mainWindowFromIFrame3 } = patchWindowObjects({ mainWindow: window, iframeWindow: iframe3.contentWindow! });
+
+        const connect3 = await CorvinaConnect.create({
+            corvinaHost: 'http://localhost',
+            currentWindow: iframeWindow3,
+            corvinaHostWindow: mainWindowFromIFrame3
+        });
+        const postMessageMocked3 = jest.spyOn(iframe3.contentWindow!, 'postMessage');
+        corvinaHost.setJwtApp({
+            jwt: 'jwt1',
+            iframeOrigin: url1,
+        })
+
+        // the jwt should be sent both to iframe1 and iframe3...
+        expect(postMessageMocked3).toHaveBeenCalledTimes(1);
+        expect(postMessageMocked3).toHaveBeenCalledWith(
+            {payload: {jwt: "jwt1"}, type: "JWT_CHANGED"}, {targetOrigin: "http://iframe1/"}
+        );
+        expect(postMessageMocked1).toHaveBeenCalledTimes(2);
+        expect(postMessageMocked1).toHaveBeenCalledWith(
+            {payload: {jwt: "jwt1"}, type: "JWT_CHANGED"}, {targetOrigin: "http://iframe1/"}
+        );
+        // .. but not to iframe2
+        expect(postMessageMocked2).toHaveBeenCalledTimes(1);
+
+        document.body.removeChild(iframe1);
+        document.body.removeChild(iframe2);
+    });
+
 });

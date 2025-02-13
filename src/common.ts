@@ -39,3 +39,9 @@ export interface IDisposable {
 }
 
 export const appHrefQueryString = 'appHref';
+
+export interface IJwtApp {
+    jwt: string;
+    iframeOrigin: string;
+}
+export type IJwtAppMap = Map<string, IJwtApp>; // iframeOrigin -> IJwtApp

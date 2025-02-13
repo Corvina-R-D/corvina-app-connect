@@ -2,7 +2,7 @@
 
 ## What is this repository for? ##
 
-This library enables an application embedded as an iframe in Corvina to retrieve some information such as JWT, organization id, ...
+This library enables an application embedded as an iframe in Corvina to retrieve some information such as JWT, organization id, ...  
 The iframe id must have a prefix "corvina-app-connect-" and the application must be registered in the Corvina platform.
 
 ## How to use this library ##
@@ -48,7 +48,7 @@ The iframe id must have a prefix "corvina-app-connect-" and the application must
 Then you can create an instance of CorvinaConnect and use it to retrieve the information you need:
 
 ```javascript
-let connect = await CorvinaConnect.create({ corvinaHost: "https://corvina.io", corvinaHostWindow: window.parent });
+let connect = await CorvinaConnect.create({ corvinaHost: "https://app.corvina.io", corvinaHostWindow: window.parent });
 let jwt = connect.jwt;
 let organizationId = connect.organizationId;
 

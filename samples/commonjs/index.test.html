@@ -12,7 +12,7 @@
   <div id="mocha"></div>
   <iframe src="" id="corvina-app-connect-app" title="sample-app-iframe"></iframe>
 
-  <script src="https://unpkg.com/chai/chai.js"></script>
+  <script src="https://unpkg.com/chai@v4/chai.js"></script>
   <script src="https://unpkg.com/mocha/mocha.js"></script>
 
   <script class="mocha-init">
@@ -26,6 +26,28 @@
       return new Promise(resolve => setTimeout(resolve, ms));
     }
 
+    function mockJwtApp(extra) {
+      const iframeUrl = window.location.origin;
+      let m = new Map();
+      m.set(iframeUrl, {
+        jwt: 'xxx' + (extra ?? ''),
+        iframeOrigin: iframeUrl,
+      });
+      return m;
+    }
+
+    // mock corvina host
+    const hostConfiguration = {
+      jwtApp: mockJwtApp(),
+      corvinaHost: window.location.origin,
+      corvinaDomain: window.location.hostname,
+      username: "test",
+      organizationId: "1",
+      organizationResourceId: "testorg",
+      theme: {},
+      brandName: "brand"
+    };
+
     function createAppUrl({ origin, corvinaHost }) {
       const preventCache = Math.random();
       return `${origin}/samples/commonjs/iframe.html?corvinaHost=${encodeURIComponent(corvinaHost)}&preventCache=${preventCache}`;
@@ -33,7 +55,7 @@
 
     it('I can create an instance of CorvinaHost', async function () {
       let host = await CorvinaHost.create({
-        jwt: 'xxx',
+        jwtApp: mockJwtApp(),
         corvinaHost: window.location.origin,
         organizationId: "1",
       })
@@ -43,19 +65,21 @@
       host.dispose();
     });
 
-    it('I can set jwt and organizationId in CorvinaHost', async function () {
+    it('I can set jwt and organizationId in CorvinaHost with no error', async function () {
       let host = await CorvinaHost.create({
-        jwt: 'xxx',
+        jwtApp: mockJwtApp(),
         corvinaHost: window.location.origin,
         organizationId: "1",
       })
 
       assert.isDefined(host);
 
-      host.jwt = 'new jwt';
+      host.setJwtApp({
+        jwt: 'xxxnew',
+        iframeOrigin: 'http://iframe',
+      });
       host.organizationId = 'new organizationId';
 
-      assert.equal(host.jwt, 'new jwt');
       assert.equal(host.organizationId, 'new organizationId');
 
       host.dispose();
@@ -64,11 +88,6 @@
     it('If I set jwt in CorvinaHost, then CorvinaConnect will receive that jwt', async function () {
       this.slow(400);
 
-      let hostConfiguration = {
-        jwt: 'xxx',
-        corvinaHost: window.location.origin,
-        organizationId: "1",
-      };
       const newJwt = 'new jwt';
 
       let host = await CorvinaHost.create(hostConfiguration)
@@ -79,7 +98,10 @@
 
       await sleep(200) // time to load the iframe      
 
-      host.jwt = newJwt;
+      host.setJwtApp({
+        jwt: newJwt,
+        iframeOrigin: window.location.origin,
+      });
 
       await sleep(50) // I need to wait because there is a postMessage round trip between host and connect
 
@@ -93,11 +115,6 @@
     it('If I set organizationId in CorvinaHost, then CorvinaConnect will receive that organizationId', async function () {
       this.slow(400);
 
-      let hostConfiguration = {
-        jwt: 'xxx',
-        corvinaHost: window.location.origin,
-        organizationId: "1",
-      };
       const newOrgId = 'new org id';
 
       let host = await CorvinaHost.create(hostConfiguration)
@@ -122,10 +139,8 @@
     it('If I set theme in CorvinaHost, then CorvinaConnect will receive that theme', async function () {
       this.slow(400);
 
-      let hostConfiguration = {
-        jwt: 'xxx',
-        corvinaHost: window.location.origin,
-        organizationId: "1",
+      let hostConfig = hostConfiguration;
+      hostConfig.theme = {
         theme: {
           colors: {
             wt: 'red',
@@ -178,11 +193,7 @@
     });
 
     it('CorvinaConnect is a singleton', async function () {
-      const host = await CorvinaHost.create({
-        jwt: 'xxx',
-        corvinaHost: window.location.origin,
-        organizationId: "1",
-      })
+      const host = await CorvinaHost.create(hostConfiguration)
       let connect1 = await CorvinaConnect.create({
         corvinaHost: window.location.origin,
         corvinaHostWindow: window
@@ -204,11 +215,6 @@
     it('I can trigger a navigation from CorvinaConnect to CorvinaHost', async function () {
       this.slow(400);
       let pathNavigatedTo = null;
-      const hostConfiguration = {
-        jwt: 'xxx',
-        corvinaHost: window.location.origin,
-        organizationId: "1",
-      }
       const host = await CorvinaHost.create(hostConfiguration)
       host.onNavigate(data => {
         pathNavigatedTo = data.page;

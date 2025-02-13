@@ -1,9 +1,9 @@
-import { appHrefQueryString, CorvinaPages, IDisposable, IMessage, MessageType } from "./common";
+import { CorvinaPages, IDisposable, IJwtApp, IJwtAppMap, IMessage, MessageType } from "./common";
 import { UrlWatcher } from "./hrefwatcher";
 import { ITheme } from "./ITheme";
 
 export class CorvinaHost implements IDisposable {
-  private _jwt: string;
+  private _jwtApp: IJwtAppMap;
   private _username: string;
   private _organizationId: string;
   private _organizationResourceId: string;
@@ -21,7 +21,7 @@ export class CorvinaHost implements IDisposable {
   private _appHref: string | undefined;
 
   private constructor({
-    jwt,
+    jwtApp,
     username,
     organizationId,
     organizationResourceId,
@@ -31,7 +31,7 @@ export class CorvinaHost implements IDisposable {
     defaultStandardTime,
     brandName,
   }: {
-    jwt: string;
+    jwtApp: IJwtAppMap;
     username: string;
     organizationId: string;
     organizationResourceId: string;
@@ -41,7 +41,7 @@ export class CorvinaHost implements IDisposable {
     defaultStandardTime: any;
     brandName: string;
   }) {
-    this._jwt = jwt;
+    this._jwtApp = jwtApp;
     this._username = username;
     this._organizationId = organizationId;
     this._organizationResourceId = organizationResourceId;
@@ -64,17 +64,17 @@ export class CorvinaHost implements IDisposable {
     this._onNavigateCallback = callback;
   }
 
-  set jwt(jwt: string) {
-    this._jwt = jwt;
-
+  setJwtApp(jwtApp: IJwtApp) {
     const message: IMessage = {
       type: MessageType.JWT_CHANGED,
       payload: {
-        jwt,
+        jwt: jwtApp.jwt,
       },
     };
 
-    this.sendMessageToAllFrames(message);
+    this._jwtApp.set(jwtApp.iframeOrigin, jwtApp);
+
+    this.sendMessageToFrame(message, jwtApp.iframeOrigin);
   }
 
   set username(username: string) {
@@ -147,10 +147,6 @@ export class CorvinaHost implements IDisposable {
     return this._defaultStandardTime;
   }
 
-  get jwt(): string {
-    return this._jwt;
-  }
-
   get organizationId(): string {
     return this._organizationId;
   }
@@ -174,6 +170,17 @@ export class CorvinaHost implements IDisposable {
           targetOrigin: iframe.src,
         });
       }
+    }
+  }
+
+  private sendMessageToFrame(message: IMessage, iframeOrigin: string) {
+    // retrieve all iframes in the page with source starting with iframeOrigin
+    const iframes = document.querySelectorAll(`iframe[src^='${iframeOrigin}']`) as NodeListOf<HTMLIFrameElement>;
+
+    for (const iframe of iframes) { 
+      iframe.contentWindow?.postMessage(message, {
+        targetOrigin: iframe.src,
+      });
     }
   }
 
@@ -207,7 +214,7 @@ export class CorvinaHost implements IDisposable {
     const response: IMessage = {
       type: MessageType.CORVINA_CONNECT_INIT_RESPONSE,
       payload: {
-        jwt: this._jwt,
+        jwt: this._jwtApp.get(event.origin)?.jwt,
         username: this._username,
         organizationId: this._organizationId,
         organizationResourceId: this._organizationResourceId,
@@ -227,7 +234,7 @@ export class CorvinaHost implements IDisposable {
   }
 
   static async create({
-    jwt,
+    jwtApp,
     username,
     organizationId,
     organizationResourceId,
@@ -237,7 +244,7 @@ export class CorvinaHost implements IDisposable {
     defaultStandardTime,
     brandName,
   }: {
-    jwt: string;
+    jwtApp: IJwtAppMap;
     username: string;
     organizationId: string;
     organizationResourceId: string;
@@ -247,7 +254,7 @@ export class CorvinaHost implements IDisposable {
     defaultStandardTime: any;
     brandName: string;
   }): Promise<CorvinaHost> {
-    return new CorvinaHost({ jwt, username, organizationId, organizationResourceId, corvinaHost, corvinaDomain, theme, defaultStandardTime, brandName });
+    return new CorvinaHost({ jwtApp, username, organizationId, organizationResourceId, corvinaHost, corvinaDomain, theme, defaultStandardTime, brandName });
   }
 
   enableNavigationSync() {

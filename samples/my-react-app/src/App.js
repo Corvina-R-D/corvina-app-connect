@@ -3,13 +3,27 @@ import './App.css';
 import { CorvinaConnect, CorvinaHost } from '@corvina/corvina-app-connect';
 
 (async () => {
-  let hostConfiguration = {
-    jwt: 'xxx',
+  function mockJwtApp(extra) {
+    const iframeUrl = window.location.origin;
+    let m = new Map();
+    m.set(iframeUrl, {
+      jwt: 'xxx' + (extra ?? ''),
+      iframeOrigin: iframeUrl,
+    });
+    return m;
+  }
+  const hostConfiguration = {
+    jwtApp: mockJwtApp(),
     corvinaHost: window.location.origin,
+    corvinaDomain: window.location.hostname,
+    username: "test",
     organizationId: "1",
+    organizationResourceId: "testorg",
+    theme: {},
+    brandName: "brand"
   };
-  
-  let host = await CorvinaHost.create(hostConfiguration)
+  // Mock corvina host
+  let host = await CorvinaHost.create(hostConfiguration);
   
   let connect = await CorvinaConnect.create({ corvinaHost: hostConfiguration.corvinaHost, corvinaHostWindow: window });
   

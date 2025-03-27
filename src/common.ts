@@ -14,6 +14,8 @@ export enum MessageType {
     CORVINA_NAVIGATE = "CORVINA_NAVIGATE",
     BRAND_NAME_CHANGED = "BRAND_NAME_CHANGED",
     IFRAME_HREF_CHANGED = "IFRAME_HREF_CHANGED",
+    TRANSACTIONS_AUTHORIZATION_REQUEST = "TRANSACTIONS_AUTHORIZATION_REQUEST",
+    TRANSACTIONS_AUTHORIZATION_RESPONSE = "TRANSACTIONS_AUTHORIZATION_RESPONSE",
 }
 
 export enum CorvinaPages {
@@ -45,3 +47,46 @@ export interface IJwtApp {
     iframeOrigin: string;
 }
 export type IJwtAppMap = Map<string, IJwtApp>; // iframeOrigin -> IJwtApp
+
+export interface PreauthorizedCreditTransactionInDTO {
+    orderId: string;
+    targetWalletId: string;
+    amount: number;
+    sourceOrgResourceId?: string;
+    sourceWalletId?: string;
+    description?: string;
+    executionMinTime?: Date;
+    executionMaxTime?: Date;
+    periodicity?: string;
+    ordinal?: number;
+    executionMaxOrdinal?: number;
+    transactionSubjectType?: string;
+    transactionSubjectRef?: string;
+    transactionSubjectQuantity?: number;
+    transactionData?: Map<String, Object>;
+}
+
+export interface PreauthorizedCreditTransactionOutDTO {
+    orderId: string,
+    authorizedBy?: string,
+    targetWalletId: string,
+    amount: number,
+    sourceOrgResourceId?: string,
+    sourceWalletId?: string,
+    description?: string,
+    executionMinTime?: Date,
+    executionMaxTime?: Date,
+    periodicity?: string,
+    ordinal?: number,
+    executionMaxOrdinal?: number,
+    transactionSubjectType?: string,
+    transactionSubjectRef?: string,
+    transactionSubjectQuantity?: number,
+    transactionData?: Map<String, Object>,
+    id: number,
+    orgResourceId: string,
+    entityId: number,
+    entityStringId: string,
+    entityType: string,
+    state: string,
+}

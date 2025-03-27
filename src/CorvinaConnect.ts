@@ -1,4 +1,4 @@
-import { IDisposable, IMessage, MessageType, CorvinaPages } from "./common";
+import { IDisposable, IMessage, MessageType, CorvinaPages, PreauthorizedCreditTransactionInDTO } from "./common";
 import { UrlWatcher } from "./hrefwatcher";
 import { ITheme } from "./ITheme";
 
@@ -11,6 +11,7 @@ export enum CorvinaConnectEventType {
     THEME_CHANGED = "THEME_CHANGED",
     BRAND_NAME_CHANGED = "BRAND_NAME_CHANGED",
     IFRAME_HREF_CHANGED = "IFRAME_HREF_CHANGED",
+    TRANSACTIONS_AUTHORIZATION_RESPONSE = "TRANSACTIONS_AUTHORIZATION_RESPONSE",
 }
 
 const initHandshake = ({ currentWindow, corvinaHostWindow, corvinaHost }: { currentWindow: Window, corvinaHostWindow: Window, corvinaHost: string }): Promise<CorvinaConnect> => {
@@ -190,6 +191,9 @@ export class CorvinaConnect implements IDisposable {
             case MessageType.IFRAME_HREF_CHANGED:
                 this.onIframeHrefChanged(event);
                 break;
+            case MessageType.TRANSACTIONS_AUTHORIZATION_RESPONSE:
+                this.onPreauthorizedTransactionResponse(event);
+                break;
             default:
                 break;
         }
@@ -249,6 +253,12 @@ export class CorvinaConnect implements IDisposable {
         }
     }
 
+    private onPreauthorizedTransactionResponse(event: MessageEvent<IMessage>) {
+        for (const callback of this._eventCallback[CorvinaConnectEventType.TRANSACTIONS_AUTHORIZATION_RESPONSE]) {
+            callback(event.data.payload);
+        }
+    }
+
     public off(event: CorvinaConnectEventType) {
         if (!event) {
             throw new Error("Event name is required");
@@ -261,7 +271,9 @@ export class CorvinaConnect implements IDisposable {
         if (!event) {
             throw new Error("Event name is required");
         }
-
+        if (!Object.values(CorvinaConnectEventType).includes(event)) {
+            throw new Error("Event name is not valid");
+        }
         if (!callback) {
             throw new Error("Callback is required")
         }
@@ -324,6 +336,12 @@ export class CorvinaConnect implements IDisposable {
         this._urlWatcher?.dispose();
         this._urlWatcher = undefined;
     }
-          
-    
+
+    promptPreauthorizedTransactionAuthorization(dto: PreauthorizedCreditTransactionInDTO[]) {
+        const message = {
+            type: MessageType.TRANSACTIONS_AUTHORIZATION_REQUEST,
+            payload: dto
+        } as IMessage;
+        this._corvinaHostWindow.postMessage(message, this._corvinaHost);
+    }
 }

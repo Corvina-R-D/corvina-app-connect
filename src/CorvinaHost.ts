@@ -19,6 +19,7 @@ export class CorvinaHost implements IDisposable {
   private _onIFrameHrefChanged: ((href: string) => void) | undefined;
   private _urlWatcher: UrlWatcher | undefined;
   private _appHref: string | undefined;
+  private _onPreauthorizedTransactionAuthorizationRequestCallback: ((event: MessageEvent<IMessage>) => void) | undefined;
 
   private constructor({
     jwtApp,
@@ -62,6 +63,10 @@ export class CorvinaHost implements IDisposable {
 
   onNavigate(callback: (input: { page: string | CorvinaPages }) => void): void {
     this._onNavigateCallback = callback;
+  }
+
+  onPreauthorizedTransactionAuthorizationRequest(callback: (event: MessageEvent<IMessage>) => void): void {
+    this._onPreauthorizedTransactionAuthorizationRequestCallback = callback;
   }
 
   setJwtApp(jwtApp: IJwtApp) {
@@ -131,12 +136,14 @@ export class CorvinaHost implements IDisposable {
 
   set brandName(brandName: string) {
     this._brandName = brandName;
+
     const message: IMessage = {
       type: MessageType.BRAND_NAME_CHANGED,
       payload: {
         brandName,
       },
     };
+    this.sendMessageToAllFrames(message);
   }
 
   set defaultStandardTime(defaultStandardTime: any) {
@@ -194,7 +201,9 @@ export class CorvinaHost implements IDisposable {
       case MessageType.CORVINA_NAVIGATE:
         if (!this._onNavigateCallback) {
           console.warn("CorvinaHost: onNavigate callback is not defined");
+          break;
         }
+
         this._onNavigateCallback?.(event.data.payload);
         break;
       case MessageType.IFRAME_HREF_CHANGED:
@@ -204,6 +213,14 @@ export class CorvinaHost implements IDisposable {
             this._urlWatcher.setAppHref(this._appHref, event.data.payload.type);
           }
         }
+        break;
+      case MessageType.TRANSACTIONS_AUTHORIZATION_REQUEST:
+        if (!this._onPreauthorizedTransactionAuthorizationRequestCallback) {
+          console.warn("CorvinaHost: onPaymentAuthorizationRequest callback is not defined");
+          break;
+        }
+
+        this._onPreauthorizedTransactionAuthorizationRequestCallback?.(event);
         break;
       default:
         break;

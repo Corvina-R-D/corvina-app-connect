@@ -1,6 +1,6 @@
 {
   "name": "@corvina/corvina-app-connect",
-  "version": "1.8.1",
+  "version": "1.8.2",
   "description": "This library enables an application embedded as an iframe in Corvina to retrieve some information such as JWT, organization id, ...",
   "main": "dist/index.js",
   "module": "dist/index.min.mjs",
@@ -19,14 +19,20 @@
     "bundle:umd:min": "terser --ecma 6 --compress --mangle -o dist/index.umd.min.js -- dist/index.umd.js && gzip -9 -c dist/index.umd.min.js > dist/index.umd.min.js.gz",
     "e2etest": "npm run build && http-server -c-1",
     "test": "jest",
-    "deploy": "npm publish --access public",
-    "deploy:beta": "npm publish --access public --tag beta"
+    "deploy": "npm run build && npm publish --access public",
+    "deploy:beta": "npm run build && npm publish --access public --tag beta"
   },
   "repository": {
     "type": "git",
     "url": "git+ssh://git@bitbucket.org/exorint/corvina-app-connect.git"
   },
-  "keywords": ["corvina", "app", "connect", "host", "iframe"],
+  "keywords": [
+    "corvina",
+    "app",
+    "connect",
+    "host",
+    "iframe"
+  ],
   "license": "ISC",
   "bugs": {
     "email": "support@corvina.io"
@@ -34,14 +40,15 @@
   "homepage": "https://bitbucket.org/exorint/corvina-app-connect#readme",
   "devDependencies": {
     "@types/jest": "^29.5.14",
-    "@types/jsdom": "^20.0.0",
-    "browserify": "^17.0.0",
+    "@types/jsdom": "^21.1.7",
+    "@types/node": "^22.14.0",
+    "browserify": "^17.0.1",
     "http-server": "^14.1.1",
     "jest-environment-jsdom": "^29.7.0",
-    "rollup": "^2.79.0",
-    "terser": "^5.15.0",
-    "ts-jest": "^29.2.5",
-    "typescript": "^4.8.3"
+    "rollup": "^4.39.0",
+    "terser": "^5.39.0",
+    "ts-jest": "^29.3.1",
+    "typescript": "^5.8.3"
   },
   "packageManager": "yarn@1.22.21+sha1.1959a18351b811cdeedbd484a8f86c3cc3bbaf72"
 }

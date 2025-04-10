@@ -2,7 +2,7 @@
 
 ## What is this repository for? ##
 
-This library enables an application embedded as an iframe in Corvina to retrieve some information such as JWT, organization id, ...  
+This library enables an application embedded as an iframe in Corvina to retrieve some information such as JWT, organization id, ... and to perform some actions.  
 The iframe id must have a prefix "corvina-app-connect-" and the application must be registered in the Corvina platform.
 
 ## How to use this library ##
@@ -89,6 +89,36 @@ connect.on(CorvinaConnectEventType.IFRAME_HREF_CHANGED, ({ href, type }) => {
 });
 ```
 
+## In-app purchases
+
+Credits are the unit of currency used within the Corvina platform for in-app purchases. Applications can use this library to authorize transactions involving credits. By integrating the provided interface, apps can process payments and manage credit-based transactions, ensuring a seamless user experience for purchasing services or features.
+
+This feature is triggered on demand by calling 
+```javascript
+connect.promptPreauthorizedTransactionAuthorization(transactions)
+```
+with _transactions_ defined as `PreauthorizedCreditTransactionInDTO[]`, a list of credit transactions. It prompts a dialog containing details about the total credits and the detail of each transaction, with the possibility to authorize or reject them.
+
+The response by the user is returned as an event, which we must listen to as 
+```javascript
+connect.off(CorvinaConnectEventType.TRANSACTIONS_AUTHORIZATION_RESPONSE); // turn off any previous handler
+
+connect.on(CorvinaConnectEventType.TRANSACTIONS_AUTHORIZATION_RESPONSE, (response: TransactionsAuthorizationDialogResponse) => {
+    // your logic
+    // ...
+    connect.off(CorvinaConnectEventType.TRANSACTIONS_AUTHORIZATION_RESPONSE); // turn off handler once done
+});
+```
+
+If the user (pre)authorize the transactions, the response contains `PreauthorizedCreditTransactionOutDTO[]` as payload, otherwise it is null. Response contains also a numerical status (HTTP status code like) and a message describing the event.
+
+```javascript
+TransactionsAuthorizationDialogResponse {
+    status!: number;
+    payload!: PreauthorizedCreditTransactionOutDTO[] | null;
+    msg!: TransactionsAuthorizationDialogResponseMessage;
+}
+```
 
 ## How to run the tests ##
 

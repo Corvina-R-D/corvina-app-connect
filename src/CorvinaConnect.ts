@@ -1,4 +1,4 @@
-import { IDisposable, IMessage, MessageType, CorvinaPages, PreauthorizedCreditTransactionInDTO } from "./common";
+import { IDisposable, IMessage, MessageType, CorvinaPages, PreauthorizedCreditTransactionInDTO, TransactionsAuthorizationDialogResponse } from "./common";
 import { UrlWatcher } from "./hrefwatcher";
 import { ITheme } from "./ITheme";
 
@@ -255,7 +255,7 @@ export class CorvinaConnect implements IDisposable {
 
     private onPreauthorizedTransactionResponse(event: MessageEvent<IMessage>) {
         for (const callback of this._eventCallback[CorvinaConnectEventType.TRANSACTIONS_AUTHORIZATION_RESPONSE]) {
-            callback(event.data.payload);
+            callback(event.data.payload as TransactionsAuthorizationDialogResponse);
         }
     }
 

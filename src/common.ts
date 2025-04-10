@@ -90,3 +90,22 @@ export interface PreauthorizedCreditTransactionOutDTO {
     entityType: string,
     state: string,
 }
+
+export enum TransactionsAuthorizationDialogResponseMessage {
+    AUTHORIZED = "AUTHORIZED",
+    USER_REJECTED = "USER_REJECTED",
+    ERROR_NO_EMPTY_TRANSACTIONS = "ERROR_NO_EMPTY_TRANSACTIONS",
+    ERROR_NO_IN_APP_PURCHASES = "ERROR_NO_IN_APP_PURCHASES",
+}
+
+export class TransactionsAuthorizationDialogResponse {
+    status!: number;
+    payload!: PreauthorizedCreditTransactionOutDTO[] | null;
+    msg!: TransactionsAuthorizationDialogResponseMessage;
+
+    constructor(status: number, payload: PreauthorizedCreditTransactionOutDTO[] | null, msg: TransactionsAuthorizationDialogResponseMessage) {
+        this.status = status;
+        this.payload = payload;
+        this.msg = msg;
+    }
+}

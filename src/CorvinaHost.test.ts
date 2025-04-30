@@ -278,8 +278,52 @@ describe('CorvinaHost', () => {
         // .. but not to iframe2
         expect(postMessageMocked2).toHaveBeenCalledTimes(1);
 
+        connect1.dispose();
+        connect2.dispose();
+        CorvinaConnect.dispose();
+
         document.body.removeChild(iframe1);
         document.body.removeChild(iframe2);
     });
+
+    it('user preferences', async () => {
+        const iframe = document.createElement('iframe');
+        iframe.src = 'http://iframe1';
+        iframe.id = 'corvina-app-user-pref-test';
+
+        document.body.appendChild(iframe);
+
+        const { iframeWindow, mainWindowFromIFrame } = patchWindowObjects({ mainWindow: window, iframeWindow: iframe.contentWindow! });
+
+        const connect = await CorvinaConnect.create({
+            corvinaHost: 'http://localhost',
+            currentWindow: iframeWindow,
+            corvinaHostWindow: mainWindowFromIFrame
+        });
+
+        const kvMap = new Map();
+        corvinaHost.onUserPreferenceGetRequest(async (message: MessageEvent<IMessage>) => {
+            const { key } = message.data.payload;
+            return {
+                key,
+                value: kvMap.get(key),
+            }
+        });
+        corvinaHost.onUserPreferenceSetRequest(async (message: MessageEvent<IMessage>) => {
+            const { key, value } = message.data.payload;
+            kvMap.set(key, value);
+        });
+
+        let preferenceValue = await connect.getUserPreference("prova", 0);
+        expect(preferenceValue).toBeUndefined();
+        await connect.setUserPreference("prova", "value");
+        preferenceValue = await connect.getUserPreference("prova", 0);
+        expect(preferenceValue).toEqual("value");
+
+        CorvinaConnect.dispose();
+        corvinaHost.dispose();
+
+        document.body.removeChild(iframe);
+    }, 10000);
 
 });

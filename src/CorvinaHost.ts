@@ -20,6 +20,8 @@ export class CorvinaHost implements IDisposable {
   private _urlWatcher: UrlWatcher | undefined;
   private _appHref: string | undefined;
   private _onPreauthorizedTransactionAuthorizationRequestCallback: ((event: MessageEvent<IMessage>) => void) | undefined;
+  private _onUserPreferenceSetRequestCallback: ((event: MessageEvent<IMessage>) => Promise<void>) | undefined;
+  private _onUserPreferenceGetRequestCallback: ((event: MessageEvent<IMessage>) => Promise<{key: string, value: string}>) | undefined;
 
   private constructor({
     jwtApp,
@@ -67,6 +69,14 @@ export class CorvinaHost implements IDisposable {
 
   onPreauthorizedTransactionAuthorizationRequest(callback: (event: MessageEvent<IMessage>) => void): void {
     this._onPreauthorizedTransactionAuthorizationRequestCallback = callback;
+  }
+
+  onUserPreferenceSetRequest(callback: (event: MessageEvent<IMessage>) => Promise<void>): void {
+    this._onUserPreferenceSetRequestCallback = callback;
+  }
+
+  onUserPreferenceGetRequest(callback: (event: MessageEvent<IMessage>) => Promise<{key: string, value: string}>): void {
+    this._onUserPreferenceGetRequestCallback = callback;
   }
 
   setJwtApp(jwtApp: IJwtApp) {
@@ -191,7 +201,7 @@ export class CorvinaHost implements IDisposable {
     }
   }
 
-  private onMessage(event: MessageEvent<IMessage>) {
+  private async onMessage(event: MessageEvent<IMessage>) {
     console.debug("CorvinaHost: onMessage", event.data);
 
     switch (event.data.type) {
@@ -221,6 +231,46 @@ export class CorvinaHost implements IDisposable {
         }
 
         this._onPreauthorizedTransactionAuthorizationRequestCallback?.(event);
+        break;
+      case MessageType.USER_PREFERENCE_SET_REQUEST:
+        try {
+          await this._onUserPreferenceSetRequestCallback?.(event);
+        } catch (error) {
+          console.error("CorvinaHost: Error in onUserPreferenceSetRequest callback", error);
+        } finally {
+          const response: IMessage = {
+            type: MessageType.USER_PREFERENCE_SET_RESPONSE,
+            payload: {
+              key: event.data.payload.key,
+            }
+          };
+
+          if (event.source) {
+            event.source.postMessage(response, { targetOrigin: event.origin });
+          } else {
+            console.warn("CorvinaHost: Event source is not defined", event);
+          }
+        }
+
+        break;
+      case MessageType.USER_PREFERENCE_GET_REQUEST:
+        let userPrefPayload: {key: string, value: string} | undefined = undefined;
+        try {
+          userPrefPayload = await this._onUserPreferenceGetRequestCallback?.(event);
+        } catch (error) {
+          console.error("CorvinaHost: Error in onUserPreferenceGetRequest callback", error);
+        } finally {
+          const response: IMessage = {
+            type: MessageType.USER_PREFERENCE_GET_RESPONSE,
+            payload: userPrefPayload
+          };
+
+          if (event.source) {
+            event.source.postMessage(response, { targetOrigin: event.origin });
+          } else {
+            console.warn("CorvinaHost: Event source is not defined", event);
+          }
+        }
         break;
       default:
         break;

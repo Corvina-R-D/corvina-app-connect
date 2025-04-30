@@ -89,6 +89,21 @@ connect.on(CorvinaConnectEventType.IFRAME_HREF_CHANGED, ({ href, type }) => {
 });
 ```
 
+## Getting/setting user preferences
+
+Through this library you can access the user preferences stored in Corvina Platform. The preferences are stored in a key/value map, and you can get/set them using the following methods:
+
+```javascript
+// get a preference
+let preference = await connect.getUserPreference("key");
+// set a preference
+await connect.setUserPreference("key", "value");
+```
+
+These functions are asynchronous and return a promise. By default an error is thrown if the async operation takes more than 10 seconds.
+
+If the key is missing the value returned is `undefined`.
+
 ## In-app purchases
 
 Credits are the unit of currency used within the Corvina platform for in-app purchases. Applications can use this library to authorize transactions involving credits. By integrating the provided interface, apps can process payments and manage credit-based transactions, ensuring a seamless user experience for purchasing services or features.

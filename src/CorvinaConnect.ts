@@ -12,6 +12,10 @@ export enum CorvinaConnectEventType {
     BRAND_NAME_CHANGED = "BRAND_NAME_CHANGED",
     IFRAME_HREF_CHANGED = "IFRAME_HREF_CHANGED",
     TRANSACTIONS_AUTHORIZATION_RESPONSE = "TRANSACTIONS_AUTHORIZATION_RESPONSE",
+    USER_PREFERENCE_GET_REQUEST = "USER_PREFERENCE_GET_REQUEST",
+    USER_PREFERENCE_GET_RESPONSE = "USER_PREFERENCE_GET_RESPONSE",
+    USER_PREFERENCE_SET_REQUEST = "USER_PREFERENCE_SET_REQUEST",
+    USER_PREFERENCE_SET_RESPONSE = "USER_PREFERENCE_SET_RESPONSE",
 }
 
 const initHandshake = ({ currentWindow, corvinaHostWindow, corvinaHost }: { currentWindow: Window, corvinaHostWindow: Window, corvinaHost: string }): Promise<CorvinaConnect> => {
@@ -194,6 +198,12 @@ export class CorvinaConnect implements IDisposable {
             case MessageType.TRANSACTIONS_AUTHORIZATION_RESPONSE:
                 this.onPreauthorizedTransactionResponse(event);
                 break;
+            case MessageType.USER_PREFERENCE_GET_RESPONSE:
+                this.onUserPreferenceGetResponse(event);
+                break;
+            case MessageType.USER_PREFERENCE_SET_RESPONSE:
+                this.onUserPreferenceSetResponse(event);
+                break;
             default:
                 break;
         }
@@ -259,15 +269,31 @@ export class CorvinaConnect implements IDisposable {
         }
     }
 
-    public off(event: CorvinaConnectEventType) {
+    private onUserPreferenceGetResponse(event: MessageEvent<IMessage>) {
+        for (const callback of this._eventCallback[CorvinaConnectEventType.USER_PREFERENCE_GET_RESPONSE]) {
+            callback(event.data.payload);
+        }
+    }
+
+    private onUserPreferenceSetResponse(event: MessageEvent<IMessage>) {
+        for (const callback of this._eventCallback[CorvinaConnectEventType.USER_PREFERENCE_SET_RESPONSE]) {
+            callback(event.data.payload);
+        }
+    }
+
+    public off(event: CorvinaConnectEventType, callback?: (value: any) => void) {
         if (!event) {
             throw new Error("Event name is required");
         }
 
-        this._eventCallback[event] = [];
+        if (callback) {
+            this._eventCallback[event] = this._eventCallback[event].filter((cb) => cb !== callback);
+        } else {
+            this._eventCallback[event] = [];
+        }
     }
 
-    public on(event: CorvinaConnectEventType, callback: (value: any) => void) {
+    public on(event: CorvinaConnectEventType, callback: (value: any) => void) : ((value: any) => void) {
         if (!event) {
             throw new Error("Event name is required");
         }
@@ -279,6 +305,8 @@ export class CorvinaConnect implements IDisposable {
         }
 
         this._eventCallback[event].push(callback);
+
+        return callback;
     }
 
     public navigateTo(page: string | CorvinaPages) { 
@@ -344,4 +372,62 @@ export class CorvinaConnect implements IDisposable {
         } as IMessage;
         this._corvinaHostWindow.postMessage(message, this._corvinaHost);
     }
+
+    setUserPreference(key: string, value: string, timeoutMs: number = 10000) : Promise<void> {
+        const message = {
+            type: MessageType.USER_PREFERENCE_SET_REQUEST,
+            payload: {
+                key,
+                value
+            }
+        } as IMessage;
+
+        const p = new Promise<void>((resolve, reject) => {
+            const callback = this.on(CorvinaConnectEventType.USER_PREFERENCE_SET_RESPONSE, (response: {key: string, value?: string}) => {
+                if (response.key === key) {
+                    this.off(CorvinaConnectEventType.USER_PREFERENCE_SET_RESPONSE, callback);
+                    resolve();
+                }
+            });
+            if (timeoutMs) {
+                setTimeout(() => {
+                    reject(new Error(`Timeout reached waiting for user preference ${key} response`));
+                }
+                , timeoutMs);
+            }
+        });
+
+        this._corvinaHostWindow.postMessage(message, this._corvinaHost);
+
+        return p;
+    }
+
+    public getUserPreference(key: string, timeoutMs: number = 10000) : Promise<string|undefined> {
+        const message = {
+            type: MessageType.USER_PREFERENCE_GET_REQUEST,
+            payload: {
+                key
+            }
+        } as IMessage;
+
+        const p = new Promise<string|undefined>((resolve, reject) => {
+            const callback = this.on(CorvinaConnectEventType.USER_PREFERENCE_GET_RESPONSE, (response: {key: string, value?: string}) => {
+                if (response.key === key) {
+                    this.off(CorvinaConnectEventType.USER_PREFERENCE_GET_RESPONSE, callback);
+                    resolve(response.value);
+                }
+            });
+            if (timeoutMs) {
+                setTimeout(() => {
+                    reject(new Error(`Timeout reached waiting for user preference ${key} response`));
+                }
+                , timeoutMs);
+            }
+        });
+
+        this._corvinaHostWindow.postMessage(message, this._corvinaHost);
+
+        return p;
+    }
+
 }

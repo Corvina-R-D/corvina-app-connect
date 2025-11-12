@@ -24,7 +24,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/Corvina-R-D/corvina-app-connect"
+    "url": "git+https://github.com/Corvina-R-D/corvina-app-connect.git"
   },
   "keywords": [
     "corvina",

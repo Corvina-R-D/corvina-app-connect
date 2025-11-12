@@ -37,7 +37,7 @@
   "bugs": {
     "email": "support@corvina.io"
   },
-  "homepage": "https://github.com/Corvina-R-D/corvina-app-connect?tab=readme-ov-file#readme",
+  "homepage": "https://github.com/Corvina-R-D/corvina-app-connect#readme",
   "devDependencies": {
     "@types/jest": "^29.5.14",
     "@types/jsdom": "^21.1.7",

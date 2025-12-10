@@ -24,7 +24,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@bitbucket.org/exorint/corvina-app-connect.git"
+    "url": "git+https://github.com/Corvina-R-D/corvina-app-connect.git"
   },
   "keywords": [
     "corvina",
@@ -37,7 +37,7 @@
   "bugs": {
     "email": "support@corvina.io"
   },
-  "homepage": "https://bitbucket.org/exorint/corvina-app-connect#readme",
+  "homepage": "https://github.com/Corvina-R-D/corvina-app-connect#readme",
   "devDependencies": {
     "@types/jest": "^29.5.14",
     "@types/jsdom": "^21.1.7",

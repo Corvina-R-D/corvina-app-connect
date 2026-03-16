@@ -1,0 +1,25 @@
+# https://docs.github.com/en/code-security/how-tos/secure-your-supply-chain/manage-your-dependency-security/customizing-dependabot-security-prs#example-1-configuration-for-security-updates-only
+# https://docs.github.com/en/code-security/concepts/supply-chain-security/about-dependabot-security-updates
+# https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-options-reference
+
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directories:
+      - "/"
+    exclude-paths:
+      - "samples/**"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 0 # disable version updates
+    allow:
+      - dependency-type: "production"
+    groups:
+      development-dependencies:
+        applies-to: "security-updates"
+        dependency-type: "development"
+        exclude-patterns:
+          - "*"
+      monorepo-dependencies:
+        applies-to: "security-updates"
+        group-by: dependency-name

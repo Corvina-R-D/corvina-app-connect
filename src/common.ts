@@ -24,6 +24,7 @@ export enum MessageType {
 
 export enum CorvinaPages {
     HOME = "home",
+    DIRECT_ACCESS = "directaccess",
     DASHBOARD = "dashboard",
     DEVICE_ACTIVATE = "device-activate",
     DEVICE_MANAGE = "device-manage",

@@ -37,8 +37,12 @@ export enum CorvinaPages {
     IAM_USERS = "iam-users",
     IAM_ROLES = "iam-roles",
     DEALER = "dealer",
+    /**
+     * @deprecated use LOG instead
+     */
     AUDIT = "audit", // deprecated
     LOG = "log",
+    TRIGGER = "trigger",
 }
 
 export interface IDisposable {

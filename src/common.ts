@@ -24,6 +24,7 @@ export enum MessageType {
 
 export enum CorvinaPages {
     HOME = "home",
+    DIRECT_ACCESS = "directaccess",
     DASHBOARD = "dashboard",
     DEVICE_ACTIVATE = "device-activate",
     DEVICE_MANAGE = "device-manage",
@@ -36,8 +37,12 @@ export enum CorvinaPages {
     IAM_USERS = "iam-users",
     IAM_ROLES = "iam-roles",
     DEALER = "dealer",
+    /**
+     * @deprecated use LOG instead
+     */
     AUDIT = "audit", // deprecated
     LOG = "log",
+    TRIGGER = "trigger",
 }
 
 export interface IDisposable {

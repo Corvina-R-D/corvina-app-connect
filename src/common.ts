@@ -29,6 +29,7 @@ export enum CorvinaPages {
     DEVICE_ACTIVATE = "device-activate",
     DEVICE_MANAGE = "device-manage",
     DEVICE_VPN = "device-vpn",
+    LICENSING = "licensing",
     DATA_CONFIGURE = "data-configure",
     DATA_EXPLORE = "data-explore",
     DATA_ALARMS = "data-alarms",

@@ -1,7 +1,8 @@
-export { IDisposable, IMessage, MessageType, CorvinaPages } from './common'
+export { MessageType, CorvinaPages, TransactionsAuthorizationDialogResponse, TransactionsAuthorizationDialogResponseMessage } from './common'
+export type { IDisposable, IMessage, IJwtApp, IJwtAppMap, PreauthorizedCreditTransactionInDTO, PreauthorizedCreditTransactionOutDTO } from './common'
 
 export { CorvinaHost } from './CorvinaHost'
 
 export { CorvinaConnect, CorvinaConnectEventType } from './CorvinaConnect'
 
-export { ITheme } from './ITheme'
+export type { ITheme } from './ITheme'

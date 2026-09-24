@@ -11,7 +11,7 @@ module.exports = {
     modulePathIgnorePatterns: ["<rootDir>/dist/"],
     globals: {
         'ts-jest': {
-            tsconfig: 'tsconfig.build.json',
+            tsconfig: 'tsconfig.json',
         },
     },
     setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],

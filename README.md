@@ -16,8 +16,14 @@ The iframe id must have a prefix "corvina-app-connect-" and the application must
     then in your code:
 
     ```javascript
-    import { CorvinaAppConnect } from '@corvina/corvina-app-connect';
+    import { CorvinaConnect, CorvinaConnectEventType } from '@corvina/corvina-app-connect';
+    // types are exported from the package root as well
+    import type { ITheme } from '@corvina/corvina-app-connect';
     ```
+
+    The package ships ESM and CommonJS builds with type declarations and works with every TypeScript
+    `moduleResolution` mode (`bundler`, `node16`/`nodenext`, `node10`). Always import from the package root;
+    deep imports such as `@corvina/corvina-app-connect/dist/ITheme` are still supported for backward compatibility.
 
 * OPTION 2: Using script tag:
 

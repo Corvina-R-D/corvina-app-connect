@@ -59,9 +59,9 @@ const initHandshake = ({ currentWindow, corvinaHostWindow, corvinaHost, timeoutM
             console.debug("CorvinaConnect: onMessage", event.data);
             stop();
 
-            const { corvinaDomain, jwt, username, organizationId, organizationResourceId, defaultStandardTime, theme, brandName } = message.payload;
-
             try {
+                // a malformed response (no payload) rejects too: the constructor reports the first missing field
+                const { corvinaDomain, jwt, username, organizationId, organizationResourceId, defaultStandardTime, theme, brandName } = message.payload ?? {};
                 resolve(new CorvinaConnect({ jwt, username, organizationId, organizationResourceId, corvinaHost, corvinaDomain, theme, defaultStandardTime, currentWindow, corvinaHostWindow, brandName }));
             } catch (error) {
                 // e.g. no jwt for this origin: fail now, not at the timeout

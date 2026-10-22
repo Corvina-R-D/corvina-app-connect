@@ -417,6 +417,17 @@ describe('CorvinaHost', () => {
             await expect(CorvinaConnect.create({ ...sameWindow, timeoutMs: 60000 })).rejects.toThrow('JWT is required');
         });
 
+        it('rejects a malformed init response, and lets a later create try again', async () => {
+            // no host: the test plays it, with a response that has no payload
+            corvinaHost.dispose();
+            const created = CorvinaConnect.create({ ...sameWindow, timeoutMs: 60000 });
+            await tick();
+            window.dispatchEvent(messageEvent({ type: MessageType.CORVINA_CONNECT_INIT_RESPONSE }, window, window.location.origin));
+
+            await expect(created).rejects.toThrow('JWT is required');
+            expect((CorvinaConnect as any)._pendingInstance).toBeUndefined();
+        });
+
         it('shares one handshake between concurrent create calls', async () => {
             const postMessage = jest.spyOn(window, 'postMessage');
 

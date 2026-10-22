@@ -415,6 +415,11 @@ describe('CorvinaHost', () => {
             jwtApp.delete(window.location.origin);
 
             await expect(CorvinaConnect.create({ ...sameWindow, timeoutMs: 60000 })).rejects.toThrow('JWT is required');
+
+            // the failed handshake does not turn on the updates to the window
+            const postMessage = jest.spyOn(window, 'postMessage');
+            corvinaHost.organizationResourceId = 'org-after-failure';
+            expect(postMessage).not.toHaveBeenCalled();
         });
 
         it('rejects a malformed init response, and lets a later create try again', async () => {

@@ -1,4 +1,4 @@
-import { IDisposable, IMessage, MessageType, CorvinaPages, PreauthorizedCreditTransactionInDTO, TransactionsAuthorizationDialogResponse } from "./common";
+import { IDisposable, IMessage, MessageType, CorvinaPages, PreauthorizedCreditTransactionInDTO, TransactionsAuthorizationDialogResponse, missingInitField } from "./common";
 import { UrlWatcher } from "./hrefwatcher";
 import { ITheme } from "./ITheme";
 
@@ -106,28 +106,13 @@ export class CorvinaConnect implements IDisposable {
 
     public constructor({ jwt, username, organizationId, organizationResourceId, corvinaHost, corvinaDomain, theme, brandName, defaultStandardTime, currentWindow, corvinaHostWindow }: { jwt: string, username: string, organizationId: string, organizationResourceId: string, corvinaHost: string, corvinaDomain: string, theme?: ITheme, brandName: string, defaultStandardTime: any, currentWindow ?: Window, corvinaHostWindow: Window }) {
 
-        if (!jwt) {
-            throw new Error('JWT is required');
-        }
-
-        if (!username) {
-            throw new Error('Username is required');
-        }
-
-        if (!organizationId) {
-            throw new Error('OrganizationId is required');
-        }
-
-        if (!organizationResourceId) {
-            throw new Error('OrganizationResourceId is required');
+        const missing = missingInitField({ jwt, username, organizationId, organizationResourceId, corvinaDomain });
+        if (missing) {
+            throw new Error(missing);
         }
 
         if (!corvinaHost) {
             throw new Error('CorvinaHost is required');
-        }
-
-        if (!corvinaDomain) {
-            throw new Error('CorvinaDomain is required');
         }
 
         if (!corvinaHostWindow) {

@@ -1,4 +1,4 @@
-import { CorvinaPages, IDisposable, IJwtApp, IJwtAppMap, IMessage, MessageType } from "./common";
+import { CorvinaPages, IDisposable, IJwtApp, IJwtAppMap, IMessage, MessageType, missingInitField } from "./common";
 import { UrlWatcher } from "./hrefwatcher";
 import { ITheme } from "./ITheme";
 
@@ -294,10 +294,6 @@ export class CorvinaHost implements IDisposable {
   }
 
   private onCorvinaConnectInit(event: MessageEvent<IMessage>) {
-    if (event.source === window) {
-      this._hasSameWindowClient = true;
-    }
-
     const response: IMessage = {
       type: MessageType.CORVINA_CONNECT_INIT_RESPONSE,
       payload: {
@@ -312,6 +308,11 @@ export class CorvinaHost implements IDisposable {
         brandName: this._brandName,	
       },
     };
+
+    // only once a client in this window can complete the handshake with this response (e.g. not without a jwt)
+    if (event.source === window && !missingInitField(response.payload)) {
+      this._hasSameWindowClient = true;
+    }
 
     if (event.source) {
       event.source.postMessage(response, { targetOrigin: event.origin });

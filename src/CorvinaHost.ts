@@ -22,6 +22,8 @@ export class CorvinaHost implements IDisposable {
   private _onPreauthorizedTransactionAuthorizationRequestCallback: ((event: MessageEvent<IMessage>) => void) | undefined;
   private _onUserPreferenceSetRequestCallback: ((event: MessageEvent<IMessage>) => Promise<void>) | undefined;
   private _onUserPreferenceGetRequestCallback: ((event: MessageEvent<IMessage>) => Promise<{key: string, value: string}>) | undefined;
+  // a CorvinaConnect in this same window completed the handshake (an app rendered in the page, not in an iframe)
+  private _hasSameWindowClient = false;
 
   private constructor({
     jwtApp,
@@ -90,6 +92,9 @@ export class CorvinaHost implements IDisposable {
     this._jwtApp.set(jwtApp.iframeOrigin, jwtApp);
 
     this.sendMessageToFrame(message, jwtApp.iframeOrigin);
+    if (jwtApp.iframeOrigin === window.location.origin) {
+      this.sendMessageToSameWindow(message);
+    }
   }
 
   set username(username: string) {
@@ -103,6 +108,7 @@ export class CorvinaHost implements IDisposable {
     };
 
     this.sendMessageToAllFrames(message);
+    this.sendMessageToSameWindow(message);
   }
 
   set organizationId(organizationId: string) {
@@ -116,6 +122,7 @@ export class CorvinaHost implements IDisposable {
     };
 
     this.sendMessageToAllFrames(message);
+    this.sendMessageToSameWindow(message);
   }
 
   set organizationResourceId(organizationResourceId: string) {
@@ -129,6 +136,7 @@ export class CorvinaHost implements IDisposable {
     };
 
     this.sendMessageToAllFrames(message);
+    this.sendMessageToSameWindow(message);
   }
 
   set theme(theme: ITheme | undefined) {
@@ -142,6 +150,7 @@ export class CorvinaHost implements IDisposable {
     };
 
     this.sendMessageToAllFrames(message);
+    this.sendMessageToSameWindow(message);
   }
 
   set brandName(brandName: string) {
@@ -154,6 +163,7 @@ export class CorvinaHost implements IDisposable {
       },
     };
     this.sendMessageToAllFrames(message);
+    this.sendMessageToSameWindow(message);
   }
 
   set defaultStandardTime(defaultStandardTime: any) {
@@ -187,6 +197,12 @@ export class CorvinaHost implements IDisposable {
           targetOrigin: iframe.src,
         });
       }
+    }
+  }
+
+  private sendMessageToSameWindow(message: IMessage) {
+    if (this._hasSameWindowClient) {
+      window.postMessage(message, window.location.origin);
     }
   }
 
@@ -278,6 +294,10 @@ export class CorvinaHost implements IDisposable {
   }
 
   private onCorvinaConnectInit(event: MessageEvent<IMessage>) {
+    if (event.source === window) {
+      this._hasSameWindowClient = true;
+    }
+
     const response: IMessage = {
       type: MessageType.CORVINA_CONNECT_INIT_RESPONSE,
       payload: {

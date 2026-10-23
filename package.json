@@ -49,8 +49,6 @@
     "bundle:dts": "rollup dist/index.d.ts --file dist/index.d.mts --format esm --plugin dts",
     "e2etest": "npm run build && http-server -c-1",
     "test": "jest",
-    "deploy": "npm run build && npm publish --access public",
-    "deploy:beta": "npm run build && npm publish --access public --tag beta",
     "check:types": "attw --pack . --entrypoints . ./dist/ITheme"
   },
   "repository": {

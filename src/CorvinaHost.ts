@@ -1,4 +1,4 @@
-import { CorvinaPages, IDisposable, IJwtApp, IJwtAppMap, IMessage, MessageType } from "./common";
+import { CorvinaPages, IDisposable, IJwtApp, IJwtAppMap, IMessage, MessageType, missingInitField } from "./common";
 import { UrlWatcher } from "./hrefwatcher";
 import { ITheme } from "./ITheme";
 
@@ -22,6 +22,8 @@ export class CorvinaHost implements IDisposable {
   private _onPreauthorizedTransactionAuthorizationRequestCallback: ((event: MessageEvent<IMessage>) => void) | undefined;
   private _onUserPreferenceSetRequestCallback: ((event: MessageEvent<IMessage>) => Promise<void>) | undefined;
   private _onUserPreferenceGetRequestCallback: ((event: MessageEvent<IMessage>) => Promise<{key: string, value: string}>) | undefined;
+  // a CorvinaConnect in this same window completed the handshake (an app rendered in the page, not in an iframe)
+  private _hasSameWindowClient = false;
 
   private constructor({
     jwtApp,
@@ -90,6 +92,9 @@ export class CorvinaHost implements IDisposable {
     this._jwtApp.set(jwtApp.iframeOrigin, jwtApp);
 
     this.sendMessageToFrame(message, jwtApp.iframeOrigin);
+    if (jwtApp.iframeOrigin === window.location.origin) {
+      this.sendMessageToSameWindow(message);
+    }
   }
 
   set username(username: string) {
@@ -103,6 +108,7 @@ export class CorvinaHost implements IDisposable {
     };
 
     this.sendMessageToAllFrames(message);
+    this.sendMessageToSameWindow(message);
   }
 
   set organizationId(organizationId: string) {
@@ -116,6 +122,7 @@ export class CorvinaHost implements IDisposable {
     };
 
     this.sendMessageToAllFrames(message);
+    this.sendMessageToSameWindow(message);
   }
 
   set organizationResourceId(organizationResourceId: string) {
@@ -129,6 +136,7 @@ export class CorvinaHost implements IDisposable {
     };
 
     this.sendMessageToAllFrames(message);
+    this.sendMessageToSameWindow(message);
   }
 
   set theme(theme: ITheme | undefined) {
@@ -142,6 +150,7 @@ export class CorvinaHost implements IDisposable {
     };
 
     this.sendMessageToAllFrames(message);
+    this.sendMessageToSameWindow(message);
   }
 
   set brandName(brandName: string) {
@@ -154,6 +163,7 @@ export class CorvinaHost implements IDisposable {
       },
     };
     this.sendMessageToAllFrames(message);
+    this.sendMessageToSameWindow(message);
   }
 
   set defaultStandardTime(defaultStandardTime: any) {
@@ -187,6 +197,12 @@ export class CorvinaHost implements IDisposable {
           targetOrigin: iframe.src,
         });
       }
+    }
+  }
+
+  private sendMessageToSameWindow(message: IMessage) {
+    if (this._hasSameWindowClient) {
+      window.postMessage(message, window.location.origin);
     }
   }
 
@@ -292,6 +308,11 @@ export class CorvinaHost implements IDisposable {
         brandName: this._brandName,	
       },
     };
+
+    // only once a client in this window can complete the handshake with this response (e.g. not without a jwt)
+    if (event.source === window && !missingInitField(response.payload)) {
+      this._hasSameWindowClient = true;
+    }
 
     if (event.source) {
       event.source.postMessage(response, { targetOrigin: event.origin });

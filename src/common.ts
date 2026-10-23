@@ -3,6 +3,20 @@ export interface IMessage {
     payload: any;
 }
 
+/** The fields of the init response a client cannot do without, with the error it reports when one is missing. */
+const requiredInitFields: [key: string, error: string][] = [
+    ["jwt", "JWT is required"],
+    ["username", "Username is required"],
+    ["organizationId", "OrganizationId is required"],
+    ["organizationResourceId", "OrganizationResourceId is required"],
+    ["corvinaDomain", "CorvinaDomain is required"],
+];
+
+/** The error for the first required field of the init response that `payload` lacks, if any. */
+export function missingInitField(payload: { [key: string]: unknown }): string | undefined {
+    return requiredInitFields.find(([key]) => !payload[key])?.[1];
+}
+
 export enum MessageType {
     CORVINA_CONNECT_INIT = "CORVINA_CONNECT_INIT",
     CORVINA_CONNECT_INIT_RESPONSE = "CORVINA_CONNECT_INIT_RESPONSE",

@@ -76,6 +76,23 @@ connect.navigateTo(CorvinaPages.DASHBOARD);
 connect.navigateTo("/another-page?param1=value1&param2=value2");
 ```
 
+`CorvinaConnect` only accepts messages from `corvinaHostWindow` and from the origin of `corvinaHost`: other iframes in
+the page cannot send it events.
+
+## Same window ##
+
+An application rendered by the Corvina page itself, not in an iframe, connects to the host in its own window:
+
+```javascript
+let connect = await CorvinaConnect.create({ corvinaHost: location.origin, corvinaHostWindow: window });
+```
+
+- The host answers with the JWT it has for its own origin: the host page sets it with
+  `corvinaHost.setJwtApp({ jwt, iframeOrigin: location.origin })` before the application connects.
+- After the handshake, the host also sends its updates (JWT, organization, user, theme, brand name) to its own window.
+- Do not call `enableNavigationSync` in the same window: the host page already owns the URL, and a second watcher would
+  patch its `history` again. Use `navigateTo` to change the host route.
+
 ## Navigation synchronization ##
 
 The library provides a way to synchronize the navigation between the application and Corvina Platform.

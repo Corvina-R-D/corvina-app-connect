@@ -20,17 +20,14 @@ describe('CorvinaHost', () => {
     const defaultStandardTime = new Date();
     const brandName = 'TestBrand';
 
-    const patchWindowObjects = ({ mainWindow, iframeWindow }: { mainWindow: Window, iframeWindow: Window }): { mainWindowFromIFrame: Window, iframeWindow: Window } => {
-        const jsdomPostMessage: any = iframeWindow.postMessage;
-        (iframeWindow as any).postMessage = (message: any, options?: WindowPostMessageOptions) => {
-            if (options && options.targetOrigin) {
-                // ensure to use only the suppported signature, and remove any restriction on the source
-                jsdomPostMessage.call(iframeWindow, { ...message }, '*');
-            } else {
-                jsdomPostMessage.call(iframeWindow, message);
-            }
-        }
+    /** jsdom's postMessage sets neither `source` nor `origin` (TODOs in jsdom's post-message.js): set them as a browser does. */
+    const messageEvent = (data: any, source: Window, origin: string): MessageEvent => {
+        const event = new MessageEvent('message', { data, origin });
+        Object.defineProperty(event, 'source', { value: source });
+        return event;
+    }
 
+    const patchWindowObjects = ({ mainWindow, iframeWindow }: { mainWindow: Window, iframeWindow: Window }): { mainWindowFromIFrame: Window, iframeWindow: Window } => {
         // ensure the main window, when posting 
         const postMessageFromIframeHandler = {
             get: function (target: any, prop: any, receiver: any) {
@@ -47,11 +44,31 @@ describe('CorvinaHost', () => {
                 return Reflect.get(target, prop, receiver);
             },
         };
+        const mainWindowFromIFrame = new Proxy(mainWindow, postMessageFromIframeHandler);
+
+        // what the iframe receives comes from the main window, as the iframe sees it, and from its origin
+        (iframeWindow as any).postMessage = (message: any) => {
+            setTimeout(() => iframeWindow.dispatchEvent(messageEvent({ ...message }, mainWindowFromIFrame, mainWindow.location.origin)));
+        }
+
         return {
-            mainWindowFromIFrame: new Proxy(mainWindow, postMessageFromIframeHandler),
+            mainWindowFromIFrame,
             iframeWindow,
         }
     }
+
+    /** A client in the same window as the host: what the window posts to itself comes from itself. */
+    const patchSameWindow = (): () => void => {
+        const jsdomPostMessage = window.postMessage;
+        window.postMessage = ((message: any) => {
+            setTimeout(() => window.dispatchEvent(messageEvent({ ...message }, window, window.location.origin)));
+        }) as any;
+        return () => {
+            window.postMessage = jsdomPostMessage;
+        }
+    }
+
+    const tick = () => new Promise(resolve => setTimeout(resolve, 10));
 
 
     beforeEach(async () => {
@@ -325,5 +342,106 @@ describe('CorvinaHost', () => {
 
         document.body.removeChild(iframe);
     }, 10000);
+
+    describe('client in the same window', () => {
+        let restoreWindow: () => void;
+        const sameWindow = { corvinaHost: 'http://localhost', currentWindow: window, corvinaHostWindow: window };
+
+        beforeEach(() => {
+            CorvinaConnect.dispose();
+            restoreWindow = patchSameWindow();
+            corvinaHost.setJwtApp({ jwt: 'shell-jwt', iframeOrigin: window.location.origin });
+        });
+
+        afterEach(() => {
+            CorvinaConnect.dispose();
+            restoreWindow();
+        });
+
+        it('completes the handshake and receives the host updates', async () => {
+            const connect = await CorvinaConnect.create(sameWindow);
+            expect(connect.jwt).toBe('shell-jwt');
+            expect(connect.organizationResourceId).toBe(organizationResourceId);
+
+            const onJwt = jest.fn();
+            const onOrganization = jest.fn();
+            const onTheme = jest.fn();
+            connect.on(CorvinaConnectEventType.JWT_CHANGED, onJwt);
+            connect.on(CorvinaConnectEventType.ORGANIZATION_RESOURCE_ID_CHANGED, onOrganization);
+            connect.on(CorvinaConnectEventType.THEME_CHANGED, onTheme);
+
+            corvinaHost.setJwtApp({ jwt: 'shell-jwt-2', iframeOrigin: window.location.origin });
+            // a token for an app in another origin is not for the page
+            corvinaHost.setJwtApp({ jwt: 'other-app-jwt', iframeOrigin: 'http://iframe1' });
+            corvinaHost.organizationResourceId = 'org-2';
+            corvinaHost.theme = undefined;
+            await tick();
+
+            expect(onJwt.mock.calls).toEqual([['shell-jwt-2']]);
+            expect(connect.jwt).toBe('shell-jwt-2');
+            expect(onOrganization).toHaveBeenCalledWith('org-2');
+            expect(onTheme).toHaveBeenCalledTimes(1);
+        });
+
+        it('is not sent anything until a client in the same window completes the handshake', () => {
+            const postMessage = jest.spyOn(window, 'postMessage');
+
+            corvinaHost.organizationResourceId = 'org-3';
+            corvinaHost.setJwtApp({ jwt: 'shell-jwt-3', iframeOrigin: window.location.origin });
+
+            expect(postMessage).not.toHaveBeenCalled();
+        });
+
+        it('ignores messages that do not come from the host', async () => {
+            const connect = await CorvinaConnect.create(sameWindow);
+            const onJwt = jest.fn();
+            connect.on(CorvinaConnectEventType.JWT_CHANGED, onJwt);
+
+            const iframe = document.createElement('iframe');
+            document.body.appendChild(iframe);
+            const forged = { type: MessageType.JWT_CHANGED, payload: { jwt: 'forged-jwt' } };
+            // another iframe in the page posting to the parent window
+            window.dispatchEvent(messageEvent(forged, iframe.contentWindow!, 'http://evil'));
+            // right window, wrong origin
+            window.dispatchEvent(messageEvent(forged, window, 'http://evil'));
+
+            expect(onJwt).not.toHaveBeenCalled();
+            expect(connect.jwt).toBe('shell-jwt');
+
+            document.body.removeChild(iframe);
+        });
+
+        it('rejects at once when the init response is incomplete', async () => {
+            jwtApp.delete(window.location.origin);
+
+            await expect(CorvinaConnect.create({ ...sameWindow, timeoutMs: 60000 })).rejects.toThrow('JWT is required');
+
+            // the failed handshake does not turn on the updates to the window
+            const postMessage = jest.spyOn(window, 'postMessage');
+            corvinaHost.organizationResourceId = 'org-after-failure';
+            expect(postMessage).not.toHaveBeenCalled();
+        });
+
+        it('rejects a malformed init response, and lets a later create try again', async () => {
+            // no host: the test plays it, with a response that has no payload
+            corvinaHost.dispose();
+            const created = CorvinaConnect.create({ ...sameWindow, timeoutMs: 60000 });
+            await tick();
+            window.dispatchEvent(messageEvent({ type: MessageType.CORVINA_CONNECT_INIT_RESPONSE }, window, window.location.origin));
+
+            await expect(created).rejects.toThrow('JWT is required');
+            expect((CorvinaConnect as any)._pendingInstance).toBeUndefined();
+        });
+
+        it('shares one handshake between concurrent create calls', async () => {
+            const postMessage = jest.spyOn(window, 'postMessage');
+
+            const [first, second] = await Promise.all([CorvinaConnect.create(sameWindow), CorvinaConnect.create(sameWindow)]);
+
+            expect(first).toBe(second);
+            const inits = postMessage.mock.calls.filter(([message]) => message.type === MessageType.CORVINA_CONNECT_INIT);
+            expect(inits).toHaveLength(1);
+        });
+    });
 
 });

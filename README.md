@@ -165,6 +165,5 @@ TransactionsAuthorizationDialogResponse {
 
 ## How to deploy a new version ##
 
-* Update the version in package.json
-* Run `npm run build`
-* Run `npm publish`
+* Create a GitHub release with tag `X.Y.Z` (or `X.Y.Z-beta.N` marked as pre-release, published under the `beta` dist-tag)
+* The [Publish](.github/workflows/publish.yaml) workflow tests, builds and publishes the package on npm, then bumps `version` in `package.json` on `master`

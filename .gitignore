@@ -48,3 +48,6 @@ Thumbs.db
 *.mov
 *.wmv
 
+
+# Claude Code settings (may contain credentials)
+.claude/settings*.json
